@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#E8590C"><link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>家庭照片拼图</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overscroll-behavior:none}
+body{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;background:#FFF8EC;color:#1E1E1E;font-size:clamp(18px,2.6vmin,28px);user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.screen{display:none;min-height:100%;padding:16px 20px 84px;flex-direction:column;align-items:center}
+.screen.on{display:flex}
+h1{font-size:1.7em;margin:10px 0 6px;text-align:center}h2{font-size:1.3em;margin:0;text-align:center;flex:1}
+.tip{color:#444;margin:6px 0 14px;text-align:center}
+.btn{min-height:72px;padding:12px 22px;border:4px solid #1E1E1E;border-radius:22px;background:#fff;font:inherit;font-size:1.1em;font-weight:700;color:#1E1E1E;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;margin:8px}
+.btn.primary{background:#E8590C;color:#fff;border-color:#9C3A08}
+.btn.sel{background:#1971C2;color:#fff;border-color:#0B4F8F}
+.btn.small{min-height:64px;padding:8px 16px;font-size:1em;margin:0}
+.btn .ic{font-size:1.5em}
+.row{display:flex;flex-wrap:wrap;justify-content:center}
+.big{width:min(42vw,300px);height:min(32vw,210px);flex-direction:column;font-size:1.3em}.big .ic{font-size:2.6em}
+.top{width:100%;display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.wide{width:min(90vw,460px)}
+#resumeCard{display:none;align-items:center;gap:16px;border:4px solid #2B8A3E;background:#EBFBEE;border-radius:22px;padding:12px 20px;margin:6px 0 10px;font-size:1.15em;font-weight:700;cursor:pointer}
+#resumeCard img{width:90px;height:90px;border-radius:12px;border:3px solid #1E1E1E}
+.samples{display:grid;grid-template-columns:repeat(3,min(26vw,180px));gap:16px;margin:6px 0}
+.samples canvas{width:100%;aspect-ratio:1;border-radius:18px;border:5px solid #1E1E1E;cursor:pointer}
+#cropBox{width:min(80vw,58vh,460px);aspect-ratio:1;border:6px solid #1E1E1E;border-radius:12px;overflow:hidden;position:relative;background:#333;touch-action:none;cursor:grab}
+#cropCv{width:100%;height:100%;display:block}
+input[type=range]{width:min(70vw,400px);height:56px;accent-color:#E8590C}
+.warn{background:#FFF3BF;border:3px solid #E67700;border-radius:16px;padding:10px 18px;margin:6px;display:none;max-width:560px;text-align:center}
+.warn.err{background:#FFE3E3;border-color:#C92A2A}
+#helpBox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:4000;align-items:center;justify-content:center}
+#helpBox.on{display:flex}
+#helpBox .card{background:#fff;border-radius:24px;padding:24px;max-width:min(92vw,620px);max-height:90vh;overflow:auto}
+#helpBox li{margin:8px 0}
+/* 拼图页 */
+#s-play{padding:10px 10px 70px;height:100%}#progress{white-space:nowrap;font-size:1.1em}
+#playWrap{flex:1;width:100%;display:flex;gap:12px;min-height:0}
+#boardWrap{flex:none;display:flex;align-items:center;justify-content:center}
+#board{position:relative;background:#fff;border:4px dashed #888;touch-action:none}
+#ghost{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#tray{flex:1;overflow-y:auto;overflow-x:hidden;background:#F1E4CC;border-radius:16px;padding:8px;display:flex;flex-wrap:wrap;align-content:flex-start;gap:8px;touch-action:pan-y;min-height:0}
+.piece{display:block;box-shadow:0 3px 8px rgba(0,0,0,.35);border-radius:4px;touch-action:none;cursor:grab;background:#fff}
+#board .piece{position:absolute;box-shadow:none;border-radius:0;cursor:default}
+.piece.drag{position:fixed;z-index:3000;box-shadow:0 10px 24px rgba(0,0,0,.45);pointer-events:none}
+.flash{animation:fl .5s ease 3}@keyframes fl{50%{outline:8px solid #FCC419}}
+body.land #playWrap{flex-direction:row}body.port #playWrap{flex-direction:column}
+#celebrate{position:fixed;inset:0;background:rgba(255,248,236,.96);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:2000;padding:20px}
+#celebrate.on{display:flex}
+#celebrate .star{font-size:100px;animation:pop .8s ease infinite alternate}
+@keyframes pop{to{transform:scale(1.25)}}
+@media (prefers-reduced-motion:reduce){#celebrate .star,.flash{animation:none}}
+#finalCv{width:min(60vw,40vh,300px);aspect-ratio:1;border:6px solid #E8590C;border-radius:16px}
+#voice{pointer-events:none;position:fixed;bottom:8px;left:12px;right:12px;margin:auto;width:fit-content;background:#1E1E1E;color:#fff;padding:10px 22px;border-radius:40px;max-width:92%;z-index:5000;font-size:.95em;text-align:center}
+#soundBtn{position:fixed;top:10px;right:10px;z-index:100}
+body.senior{font-size:clamp(20px,3vmin,32px)}
+</style></head><body class="land">
+<div id="voice">🔊 你好！我们一起来拼照片吧</div>
+
+<section class="screen on" id="s-home">
+  <h1>🧩 家庭照片拼图</h1>
+  <div id="resumeCard"><img id="resumeImg" alt=""><span>▶ 继续拼上次的<br><small id="resumeInfo"></small></span></div>
+  <p class="tip">请先选择谁来玩</p>
+  <div class="row">
+    <button class="btn big" id="modeKid"><span class="ic">🧒</span>小朋友</button>
+    <button class="btn big" id="modeSenior"><span class="ic">👵</span>长辈</button>
+  </div>
+  <button class="btn primary wide" id="toSource"><span class="ic">▶</span>开始选照片</button>
+  <button class="btn small" id="voiceToggle" style="margin-top:14px">🔊 语音：开</button>
+</section>
+
+<section class="screen" id="s-source">
+  <div class="top"><button class="btn small" data-back="s-home">◀ 返回</button><h2>选一张照片</h2><span style="width:90px"></span></div>
+  <p class="tip">点一张示例图，或者用自己的照片</p>
+  <div class="samples" id="samples"></div>
+  <div class="row">
+    <label class="btn"><span class="ic">🖼️</span>从相册选<input id="fileAlbum" type="file" accept="image/*" hidden></label>
+    <label class="btn"><span class="ic">📷</span>拍一张<input id="fileCam" type="file" accept="image/*" capture="environment" hidden></label>
+  </div>
+  <div class="warn err" id="loadErr">这张照片打不开，请换一张试试。</div>
+  <button class="btn small" id="helpBtn">❓ 选不了照片？</button>
+</section>
+
+<section class="screen" id="s-crop">
+  <div class="top"><button class="btn small" data-back="s-source">◀ 换照片</button><h2>调整照片</h2><span style="width:90px"></span></div>
+  <p class="tip">用手指拖动照片，把想要的部分放进方框</p>
+  <div id="cropBox"><canvas id="cropCv" width="600" height="600"></canvas></div>
+  <div class="row" style="align-items:center"><span>➖</span><input type="range" id="zoom" min="100" max="300" value="100" aria-label="放大"><span>➕</span></div>
+  <div class="warn" id="qualWarn"></div>
+  <div class="row"><button class="btn" id="autoCrop">✨ 自动居中</button><button class="btn primary" id="toPieces">✔ 就用这张</button></div>
+</section>
+
+<section class="screen" id="s-pieces">
+  <div class="top"><button class="btn small" data-back="s-crop">◀ 返回</button><h2>要拼几块？</h2><span style="width:90px"></span></div>
+  <canvas id="previewCv" width="240" height="240" style="width:min(40vw,240px);border:5px solid #1E1E1E;border-radius:16px;margin:6px"></canvas>
+  <div class="row" id="pieceChoices"></div>
+  <button class="btn primary wide" id="startPlay"><span class="ic">▶</span>开始拼图</button>
+</section>
+
+<section class="screen" id="s-play">
+  <div class="top"><button class="btn small" id="playBack">◀ 返回</button><h2 id="progress">已拼好 0 / 0</h2><button class="btn small" id="hintBtn">💡 提示</button></div>
+  <div id="playWrap"><div id="boardWrap"><div id="board"><canvas id="ghost" width="300" height="300"></canvas></div></div><div id="tray"></div></div>
+</section>
+
+<div id="celebrate"><div class="star">🌟</div><h1>太棒了！拼好啦！</h1>
+  <canvas id="finalCv" width="600" height="600"></canvas>
+  <div class="row"><button class="btn primary" id="again">🔁 再拼一次</button><button class="btn" id="newPhoto">🖼️ 换张照片</button></div></div>
+
+<div id="helpBox"><div class="card">
+  <h2 style="text-align:left">选不了照片怎么办？</h2>
+  <p>没关系，可以先点上面的示例图玩。想用自己的照片，请家人帮忙：</p>
+  <ul>
+    <li><b>iPhone / iPad：</b>设置 → Safari（或你用的浏览器）→ 相机 / 照片 → 选“允许”。</li>
+    <li><b>安卓手机：</b>设置 → 应用 → 浏览器 → 权限 → 打开“相机”和“照片和视频”。</li>
+    <li>微信里打开的话，点右上角“…”，选“在浏览器中打开”再试。</li>
+  </ul>
+  <p>照片只在这台设备上使用，不会上传。</p>
+  <button class="btn primary" id="helpClose">好的，我知道了</button>
+</div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const S={mode:localStorage.getItem('pz_mode')||'kid',img:null,src:'',cx:0,cy:0,scale:1,base:1,n:2,square:null,quality:null};
+const DEF={kid:2,senior:3},OPTS={kid:[2,3,4],senior:[2,3,4,5,6,8,10]};
+let voiceOn=localStorage.getItem('pz_voice')!=='off';
+function say(t){$('voice').textContent='🔊 '+t;if(!voiceOn)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='zh-CN';u.rate=S.mode==='senior'?.85:1;speechSynthesis.speak(u)}catch(e){}}
+let AC;function beep(f,d){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;g.gain.value=.15;o.connect(g).connect(AC.destination);o.start();o.stop(AC.currentTime+(d||.15))}catch(e){}try{navigator.vibrate&&navigator.vibrate(40)}catch(e){}}
+function go(id,t){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));window.scrollTo(0,0);if(t)say(t);if(id==='s-home')showResume()}
+document.querySelectorAll('[data-back]').forEach(b=>b.onclick=()=>go(b.dataset.back,'返回上一步'));
+function setMode(m){S.mode=m;localStorage.setItem('pz_mode',m);$('modeKid').classList.toggle('sel',m==='kid');$('modeSenior').classList.toggle('sel',m==='senior');document.body.classList.toggle('senior',m==='senior')}
+$('modeKid').onclick=()=>{setMode('kid');say('小朋友模式')};$('modeSenior').onclick=()=>{setMode('senior');say('长辈模式')};setMode(S.mode);
+$('voiceToggle').textContent=voiceOn?'🔊 语音：开':'🔇 语音：关';
+$('voiceToggle').onclick=()=>{voiceOn=!voiceOn;localStorage.setItem('pz_voice',voiceOn?'on':'off');$('voiceToggle').textContent=voiceOn?'🔊 语音：开':'🔇 语音：关';say(voiceOn?'语音打开了':'语音关了')};
+$('toSource').onclick=()=>go('s-source','请选一张照片。可以点示例图，也可以从相册里选。');
+$('helpBtn').onclick=()=>{$('helpBox').classList.add('on');say('没关系，可以先用示例图。要用自己的照片，请家人帮忙打开权限。')};$('helpClose').onclick=()=>$('helpBox').classList.remove('on');
+// ===== 存档（只存裁剪后的 600px 副本）=====
+const SAVE='pz_save_v1';
+function save(){try{localStorage.setItem(SAVE,JSON.stringify({schemaVersion:1,mode:S.mode,n:S.n,src:S.src,image:S.square.toDataURL('image/jpeg',.85),placed:pieces.filter(p=>p.done).map(p=>p.k),order:pieces.map(p=>p.k),updatedAt:new Date().toISOString()}))}catch(e){console.warn('save failed',e)}}
+function loadSave(){try{return JSON.parse(localStorage.getItem(SAVE))}catch(e){return null}}
+function clearSave(){localStorage.removeItem(SAVE)}
+function showResume(){const s=loadSave();$('resumeCard').style.display=s?'flex':'none';if(s){$('resumeImg').src=s.image;$('resumeInfo').textContent='已拼好 '+s.placed.length+' / '+s.n*s.n+' 块'}}
+$('resumeCard').onclick=()=>{const s=loadSave();if(!s)return;const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=600;c.getContext('2d').drawImage(im,0,0,600,600);S.square=c;S.n=s.n;S.src=s.src;setMode(s.mode);startPuzzle(s)};im.src=s.image};
+showResume();
+// ===== 示例图 =====
+const SAMPLES=[
+ c=>{let g=c.createLinearGradient(0,0,0,800);g.addColorStop(0,'#74C0FC');g.addColorStop(1,'#D0EBFF');c.fillStyle=g;c.fillRect(0,0,800,800);c.fillStyle='#FCC419';c.beginPath();c.arc(620,170,90,0,7);c.fill();c.fillStyle='#51CF66';c.fillRect(0,560,800,240);c.fillStyle='#E03131';c.fillRect(200,380,260,200);c.fillStyle='#862E9C';c.beginPath();c.moveTo(170,390);c.lineTo(330,250);c.lineTo(490,390);c.fill();c.fillStyle='#fff';c.fillRect(290,470,80,110);c.fillStyle='#2F9E44';for(let i=0;i<3;i++){c.beginPath();c.arc(580+i*70,520,45,0,7);c.fill()}},
+ c=>{c.fillStyle='#FFE8CC';c.fillRect(0,0,800,800);['#FA5252','#FD7E14','#FAB005','#40C057','#228BE6','#7950F2'].forEach((col,i)=>{c.fillStyle=col;c.beginPath();c.arc(400,800,700-i*90,Math.PI,0);c.fill()});c.fillStyle='#FFE8CC';c.beginPath();c.arc(400,800,160,Math.PI,0);c.fill();c.fillStyle='#fff';[[120,120],[600,90]].forEach(([x,y])=>{c.beginPath();c.arc(x,y,50,0,7);c.arc(x+50,y,60,0,7);c.arc(x+100,y,45,0,7);c.fill()})},
+ c=>{c.fillStyle='#1864AB';c.fillRect(0,0,800,800);c.fillStyle='#FFD43B';c.beginPath();c.arc(400,370,230,0,7);c.fill();c.fillStyle='#1E1E1E';c.beginPath();c.arc(320,310,30,0,7);c.arc(480,310,30,0,7);c.fill();c.lineWidth=22;c.strokeStyle='#1E1E1E';c.beginPath();c.arc(400,390,120,.2,Math.PI-.2);c.stroke();c.fillStyle='#fff';c.font='bold 90px sans-serif';c.textAlign='center';c.fillText('笑一个',400,730)}];
+SAMPLES.forEach((draw,i)=>{const c=document.createElement('canvas');c.width=c.height=800;draw(c.getContext('2d'));c.className='sample';c.onclick=()=>{S.img=c;S.src='sample:'+i;afterLoad()};$('samples').appendChild(c)});
+// ===== 读取照片（含 EXIF 方向：createImageBitmap 自动转正）=====
+async function onFile(e){const f=e.target.files[0];e.target.value='';if(!f)return;$('loadErr').style.display='none';
+ try{let bmp;try{bmp=await createImageBitmap(f,{imageOrientation:'from-image'})}catch(_){bmp=await new Promise((ok,no)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=no;im.src=URL.createObjectURL(f)})}
+  // 超大照片先缩到 2048
+  const w=bmp.width,h=bmp.height,k=Math.min(1,2048/Math.max(w,h));const c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);c.origMin=Math.min(w,h);
+  S.img=c;S.src='local';afterLoad()}catch(err){$('loadErr').style.display='block';say('这张照片打不开，请换一张试试。')}}
+$('fileAlbum').onchange=onFile;$('fileCam').onchange=onFile;
+// ===== 清晰度检测：拉普拉斯方差 =====
+function blurScore(src){const W=256,c=document.createElement('canvas');c.width=c.height=W;const x=c.getContext('2d');const m=Math.min(src.width,src.height);x.drawImage(src,(src.width-m)/2,(src.height-m)/2,m,m,0,0,W,W);const d=x.getImageData(0,0,W,W).data,g=new Float32Array(W*W);for(let i=0;i<W*W;i++)g[i]=.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2];let s=0,s2=0,n=0;for(let y=1;y<W-1;y++)for(let X=1;X<W-1;X++){const i=y*W+X,v=4*g[i]-g[i-1]-g[i+1]-g[i-W]-g[i+W];s+=v;s2+=v*v;n++}const mean=s/n;return s2/n-mean*mean}
+function afterLoad(){const im=S.img,mn=im.origMin||Math.min(im.width,im.height);S.base=600/Math.min(im.width,im.height);$('zoom').value=100;autoCrop();
+ const bs=blurScore(im);S.quality=mn<600?'small':(bs<25?'blurry':null);
+ const w=$('qualWarn');w.style.display=S.quality?'block':'none';
+ const msg=S.quality==='small'?'这张照片有点小，拼出来可能不够清楚。可以继续，也可以换一张。':S.quality==='blurry'?'这张照片看起来有点模糊。可以继续，也可以换一张。':'用手指拖动照片，把想要的部分放进方框。好了就点“就用这张”。';
+ if(S.quality)w.textContent='⚠️ '+msg;w.dataset.score=Math.round(bs);go('s-crop',msg);tryFace(im)}
+function autoCrop(){S.scale=S.base*$('zoom').value/100;S.cx=S.img.width/2;S.cy=S.img.height/2;drawCrop()}
+async function tryFace(im){if(!('FaceDetector'in window))return;try{const fs=await new FaceDetector().detect(im);if(fs.length){let x1=1e9,y1=1e9,x2=0,y2=0;fs.forEach(f=>{const b=f.boundingBox;x1=Math.min(x1,b.x);y1=Math.min(y1,b.y);x2=Math.max(x2,b.x+b.width);y2=Math.max(y2,b.y+b.height)});S.cx=(x1+x2)/2;S.cy=(y1+y2)/2;drawCrop()}}catch(e){}}
+function clamp(){const h=300/S.scale;S.cx=Math.max(h,Math.min(S.img.width-h,S.cx));S.cy=Math.max(h,Math.min(S.img.height-h,S.cy))}
+function drawCrop(){clamp();const h=300/S.scale;$('cropCv').getContext('2d').drawImage(S.img,S.cx-h,S.cy-h,h*2,h*2,0,0,600,600)}
+$('zoom').oninput=()=>{S.scale=S.base*$('zoom').value/100;drawCrop()};$('autoCrop').onclick=()=>{$('zoom').value=100;autoCrop();tryFace(S.img);say('已经帮你放到中间了')};
+let cd=null;const cb=$('cropBox');
+cb.onpointerdown=e=>{cd={x:e.clientX,y:e.clientY,cx:S.cx,cy:S.cy,r:600/cb.clientWidth};cb.setPointerCapture(e.pointerId)};
+cb.onpointermove=e=>{if(!cd)return;S.cx=cd.cx-(e.clientX-cd.x)*cd.r/S.scale;S.cy=cd.cy-(e.clientY-cd.y)*cd.r/S.scale;drawCrop()};
+cb.onpointerup=cb.onpointercancel=()=>cd=null;
+$('toPieces').onclick=()=>{const sq=document.createElement('canvas');sq.width=sq.height=600;sq.getContext('2d').drawImage($('cropCv'),0,0);S.square=sq;$('previewCv').getContext('2d').drawImage(sq,0,0,240,240);
+ S.n=+(localStorage.getItem('pz_n_'+S.mode))||DEF[S.mode];let opts=OPTS[S.mode];if(S.quality==='small')opts=opts.filter(n=>n<=4);if(!opts.includes(S.n))S.n=opts[0]===2&&opts.includes(DEF[S.mode])?DEF[S.mode]:opts[0];
+ const box=$('pieceChoices');box.innerHTML='';opts.forEach(n=>{const b=document.createElement('button');b.className='btn'+(n===S.n?' sel':'');b.dataset.n=n;b.textContent=n*n+' 块';b.onclick=()=>{S.n=n;localStorage.setItem('pz_n_'+S.mode,n);box.querySelectorAll('.btn').forEach(x=>x.classList.toggle('sel',x===b));say(n*n+'块')};box.appendChild(b)});
+ go('s-pieces','要拼几块？块越少越简单。我们先帮你选了'+S.n*S.n+'块。')};
+// ===== 拼图 =====
+let pieces=[],placed=0,B=300,idleT;
+$('startPlay').onclick=()=>startPuzzle(null);
+$('playBack').onclick=()=>go('s-home','进度已经保存，下次可以继续拼。');
+$('again').onclick=()=>{$('celebrate').classList.remove('on');startPuzzle(null)};
+$('newPhoto').onclick=()=>{$('celebrate').classList.remove('on');go('s-source','请再选一张照片')};
+function layout(){const port=innerHeight>innerWidth;document.body.classList.toggle('port',port);document.body.classList.toggle('land',!port);
+ const top=document.querySelector('#s-play .top').offsetHeight+90;const availH=innerHeight-top,availW=innerWidth-20;
+ B=Math.floor(port?Math.min(availW,availH*.62):Math.min(availH,availW*.62));B=Math.max(200,B);
+ const bd=$('board');bd.style.width=bd.style.height=B+'px';const sz=B/S.n;
+ pieces.forEach(p=>{p.el.style.width=p.el.style.height=(p.done?sz:traySize())+'px';if(p.done){p.el.style.left=p.c*sz+'px';p.el.style.top=p.r*sz+'px'}})}
+function traySize(){const sz=B/S.n;return Math.max(S.mode==='senior'?72:64,Math.min(sz,140))} // 零件盘里不小于大目标
+addEventListener('resize',()=>{if($('s-play').classList.contains('on'))layout()});
+function startPuzzle(saved){$('celebrate').classList.remove('on');go('s-play',saved?'接着上次的拼吧。':'把下面的小块拖到白色方框里。放对了会自动吸进去。');
+ $('tray').innerHTML='';[...$('board').querySelectorAll('.piece')].forEach(e=>e.remove());pieces=[];placed=0;
+ const g=$('ghost');g.width=g.height=600;const gx=g.getContext('2d');gx.globalAlpha=S.mode==='kid'?.3:.2;gx.drawImage(S.square,0,0);
+ const n=S.n,src=600/n;let order=saved?saved.order:[...Array(n*n).keys()].sort(()=>Math.random()-.5);const done=new Set(saved?saved.placed:[]);
+ order.forEach(k=>{const r=Math.floor(k/n),c=k%n,cv=document.createElement('canvas');cv.width=cv.height=Math.round(src);cv.getContext('2d').drawImage(S.square,c*src,r*src,src,src,0,0,cv.width,cv.height);
+  cv.className='piece';cv.dataset.k=k;const p={el:cv,k,r,c,done:false};pieces.push(p);
+  if(done.has(k)){p.done=true;placed++;$('board').appendChild(cv)}else{$('tray').appendChild(cv);drag(p)}});
+ layout();upd();if(!saved)save();idle()}
+function upd(){$('progress').textContent=(innerWidth<500?'':'已拼好 ')+placed+' / '+pieces.length}
+function idle(){clearTimeout(idleT);idleT=setTimeout(()=>{if($('s-play').classList.contains('on')&&placed<pieces.length)say('要帮忙吗？点一下黄色的灯泡。')},30000)}
+function drag(p){const el=p.el;let d=null;
+ el.onpointerdown=e=>{if(p.done)return;e.preventDefault();idle();const r=el.getBoundingClientRect(),sz=B/S.n;
+  d={id:e.pointerId,ox:sz/2,oy:sz/2,ph:document.createElement('div')};d.ph.style.cssText=`width:${r.width}px;height:${r.height}px`;el.replaceWith(d.ph);document.body.appendChild(el);
+  el.classList.add('drag');el.style.width=el.style.height=sz+'px';mv(e);
+  addEventListener('pointermove',mv);addEventListener('pointerup',up);addEventListener('pointercancel',up)};
+ function mv(e){if(!d||e.pointerId!==d.id)return;el.style.left=e.clientX-d.ox+'px';el.style.top=e.clientY-d.oy+'px'}
+ function up(e){if(!d||e.pointerId!==d.id)return;removeEventListener('pointermove',mv);removeEventListener('pointerup',up);removeEventListener('pointercancel',up);
+  const br=$('board').getBoundingClientRect(),sz=B/S.n,bx=br.left+4,by=br.top+4;const x=parseFloat(el.style.left)-bx,y=parseFloat(el.style.top)-by;el.classList.remove('drag');
+  const th=sz*(S.mode==='senior'?.45:.5);
+  if(Math.hypot(x-p.c*sz,y-p.r*sz)<th){p.done=true;d.ph.remove();el.style.left=p.c*sz+'px';el.style.top=p.r*sz+'px';$('board').appendChild(el);placed++;upd();save();beep(880);
+   if(placed===pieces.length)celebrate();else say(['真棒！','放对了！','好厉害！'][placed%3])}
+  else{d.ph.replaceWith(el);el.style.left=el.style.top='';el.style.width=el.style.height=traySize()+'px';if(x>-sz/2&&y>-sz/2&&x<B&&y<B){beep(300,.1);say('再试试别的地方')}}
+  d=null}}
+$('hintBtn').onclick=()=>{idle();const p=pieces.find(p=>!p.done);if(!p)return;p.el.scrollIntoView({block:'nearest',behavior:'smooth'});p.el.classList.remove('flash');void p.el.offsetWidth;p.el.classList.add('flash');const sz=B/S.n,g=document.createElement('div');g.className='hintBox';g.style.cssText=`position:absolute;left:${p.c*sz}px;top:${p.r*sz}px;width:${sz}px;height:${sz}px;border:6px solid #FCC419;pointer-events:none;z-index:5`;$('board').appendChild(g);setTimeout(()=>g.remove(),2000);say('看，闪光的这一块，放到黄色框里')};
+function celebrate(){clearSave();clearTimeout(idleT);$('finalCv').getContext('2d').drawImage(S.square,0,0);$('celebrate').classList.add('on');beep(523);setTimeout(()=>beep(659),160);setTimeout(()=>beep(784,.3),320);say('太棒了！拼好啦！')}
+if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>
