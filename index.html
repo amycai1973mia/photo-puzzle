@@ -30,10 +30,11 @@ h1{font-size:1.6em;margin:8px 0 4px;text-align:center}h2{font-size:1.2em;margin:
 .card .badge{position:absolute;top:14px;left:14px;background:#2B8A3E;color:#fff;border-radius:12px;padding:2px 10px;font-size:.75em}
 .samples{display:grid;grid-template-columns:repeat(3,min(27vw,180px));gap:14px;margin:6px 0}
 .samples canvas{width:100%;aspect-ratio:1;border-radius:18px;border:5px solid #1E1E1E;cursor:pointer}
-#cropBox{width:min(92vw,46vh,480px);aspect-ratio:1;border:5px solid #1E1E1E;border-radius:12px;overflow:hidden;position:relative;background:#333;touch-action:none}
+#cropBox{width:min(92vw,calc(100vh - 360px),calc(100dvh - 360px),520px);aspect-ratio:1;border:5px solid #1E1E1E;border-radius:12px;overflow:hidden;position:relative;background:#333;touch-action:none}
 #cropCv{width:100%;height:100%;display:block}
 input[type=range]{width:min(70vw,380px);height:52px;accent-color:#E8590C}
-input[type=text]{font:inherit;padding:10px 14px;border:4px solid #1E1E1E;border-radius:16px;width:min(70vw,360px);min-height:60px}
+input[type=text]{font:inherit;padding:6px 12px;border:4px solid #1E1E1E;border-radius:16px;width:min(88vw,420px);min-height:56px}
+#s-crop{padding-bottom:10px}#s-crop .row{margin:4px 0}#s-crop .btn{margin:3px}
 .warn{background:#FFF3BF;border:3px solid #E67700;border-radius:16px;padding:8px 16px;margin:6px;display:none;max-width:560px;text-align:center}
 .warn.err{background:#FFE3E3;border-color:#C92A2A}
 .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:4000;align-items:center;justify-content:center}
@@ -48,20 +49,40 @@ input[type=text]{font:inherit;padding:10px 14px;border:4px solid #1E1E1E;border-
 .pc.drag{transition:none;z-index:50;box-shadow:0 10px 26px rgba(0,0,0,.5);outline:3px solid #fff}
 .pc.selp{outline:6px solid #1971C2;outline-offset:-6px;z-index:20}
 .pc.ok{outline:none}
-.pc.ok::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 3px rgba(64,192,87,.55);pointer-events:none}
-.pc.hintp{outline:7px solid #FCC419;outline-offset:-7px;z-index:30;animation:pulse .6s ease 3}
-@keyframes pulse{50%{filter:brightness(1.35)}}
-.target{position:absolute;border:7px dashed #FCC419;z-index:31;pointer-events:none;border-radius:4px}
-.flower{position:absolute;pointer-events:none;z-index:40;font-size:var(--fs);animation:bloom 1.1s ease-out forwards}
-@keyframes bloom{0%{transform:translate(-50%,-50%) scale(0) rotate(-40deg);opacity:0}35%{transform:translate(-50%,-50%) scale(1.5) rotate(10deg);opacity:1}70%{transform:translate(-50%,-50%) scale(1) rotate(0)}100%{transform:translate(-50%,-50%) scale(.55);opacity:.85}}
-.mini{position:absolute;pointer-events:none;z-index:35;font-size:var(--fs);transform:translate(-50%,-50%) scale(.55);opacity:.85}
-#celebrate{position:fixed;inset:0;display:none;z-index:2000;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,248,236,.55)}
+.pc.ok::after{content:"✓";position:absolute;right:4%;top:4%;width:max(22px,22%);height:max(22px,22%);border-radius:50%;background:rgba(43,138,62,.88);color:#fff;font-weight:900;font-size:max(14px,calc(var(--cell)*.15));display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.peek{position:absolute;inset:0;z-index:60;background-size:100% 100%;opacity:0;transition:opacity .35s;pointer-events:none;border-radius:6px}
+.peek.on{opacity:1;pointer-events:auto}
+.ptl{position:absolute;pointer-events:none;z-index:40;font-size:var(--fs);animation:drift 1.4s ease-out forwards}
+@keyframes drift{0%{transform:translate(0,0) rotate(0) scale(.6);opacity:0}20%{opacity:.95}100%{transform:translate(var(--dx),var(--dy)) rotate(var(--rt)) scale(1);opacity:0}}
+#thumb{width:56px;height:56px;border-radius:12px;border:3px solid #1E1E1E;background-size:cover;flex:none;touch-action:none;cursor:zoom-in}
+#bigThumb{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:3500;pointer-events:none}
+#bigThumb.on{display:flex}
+#bigThumb img{width:min(88vw,80vh);border-radius:14px;border:5px solid #fff}
+.diff{flex-direction:column;min-width:min(27vw,170px);min-height:96px}
+.diff small{font-weight:400;font-size:.7em;opacity:.85}
+.more .btn{min-height:56px;font-size:.85em}
+.cropCtl{display:flex;flex-direction:column;align-items:center}
+@media (orientation:landscape) and (max-height:600px){
+ #s-crop.on{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto 1fr;gap:4px 14px;align-items:start;padding:6px 12px}
+ #s-crop .top{grid-column:1/3;margin:0}
+ #s-crop #cropBox{width:calc(100vh - 86px);width:calc(100dvh - 86px)}
+ #s-crop .cropCtl{justify-content:center;height:100%}
+ #s-crop .wide{width:100%}
+ #s-play{flex-direction:row;padding:6px;align-items:stretch}
+ #s-play .top{flex-direction:column;width:auto;height:100%;margin:0 6px 0 0;justify-content:space-between}
+ #s-play .top h2{flex:none;font-size:.8em;white-space:normal;text-align:center;max-width:70px}
+ #celebrate .row{flex-direction:column}
+}
+#celebrate{position:fixed;inset:0;display:none;z-index:2000;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:18px;pointer-events:none}
+#celebrate .row,#celebrate h1{pointer-events:auto}
+#bouquetWrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:opacity 1s}
+#bouquetWrap.fade{opacity:0}
 #celebrate.on{display:flex}
-#bouquet{font-size:min(38vw,38vh);animation:grow 1.2s cubic-bezier(.3,1.6,.5,1) both;filter:drop-shadow(0 8px 14px rgba(0,0,0,.3))}
+#bouquet{font-size:min(30vw,30vh);animation:grow 1.2s cubic-bezier(.3,1.6,.5,1) both;filter:drop-shadow(0 8px 14px rgba(0,0,0,.3))}
 @keyframes grow{from{transform:scale(0) rotate(-30deg)}to{transform:scale(1)}}
 .petal{position:fixed;top:-10vh;pointer-events:none;z-index:2001;animation:fall linear forwards}
 @keyframes fall{to{transform:translateY(120vh) rotate(540deg)}}
-#celebrate h1{background:#fff;border-radius:20px;padding:6px 22px;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+#celebrate h1{font-size:1.2em;margin:4px;background:#fff;border-radius:20px;padding:6px 22px;box-shadow:0 4px 12px rgba(0,0,0,.2)}
 @media (prefers-reduced-motion:reduce){.flower,#bouquet,.petal,.pc.hintp{animation-duration:.01s}}
 #voice{pointer-events:none;position:fixed;bottom:8px;left:12px;right:12px;margin:auto;width:fit-content;max-width:92%;background:#1E1E1E;color:#fff;padding:9px 20px;border-radius:40px;z-index:5000;font-size:.9em;text-align:center;transition:opacity .5s}
 #voice.hide{opacity:0}
@@ -90,16 +111,16 @@ input[type=text]{font:inherit;padding:10px 14px;border:4px solid #1E1E1E;border-
 </section>
 
 <section class="screen" id="s-crop">
-  <div class="top"><button class="btn small" data-back="s-source">◀</button><h2 data-t="adjust"></h2><span style="width:56px"></span></div>
-  <p class="tip" data-t="adjustTip" style="margin:0 0 8px"></p>
+  <div class="top"><button class="btn small" data-back="s-source">◀</button><h2 data-t="adjustTip" style="font-size:.85em;white-space:normal"></h2><span style="width:56px"></span></div>
   <div id="cropBox"><canvas id="cropCv" width="600" height="600"></canvas></div>
-  <div class="row"><span>➖</span><input type="range" id="zoom" min="100" max="300" value="100"><span>➕</span></div>
+  <div class="cropCtl">
+  <div class="warn" id="qualWarn" style="margin:4px;padding:4px 12px;font-size:.8em"></div>
+  <div class="row"><button class="btn small" id="zoomOut" aria-label="zoom out">➖</button><button class="btn small" id="zoomIn" aria-label="zoom in">➕</button>
+    <span style="width:10px"></span><span aria-hidden="true">🔤</span>
+    <button class="btn small sz" data-s="S" data-t="sS"></button><button class="btn small sz sel" data-s="M" data-t="sM"></button><button class="btn small sz" data-s="L" data-t="sL"></button></div>
   <div class="row"><input type="text" id="labelTxt" maxlength="20"></div>
-  <div class="row"><span data-t="size"></span>
-    <button class="btn small sz" data-s="S" data-t="sS"></button><button class="btn small sz sel" data-s="M" data-t="sM"></button><button class="btn small sz" data-s="L" data-t="sL"></button>
-  </div>
-  <div class="warn" id="qualWarn"></div>
   <button class="btn primary wide" id="toPieces"><span class="ic">✔</span><span data-t="useThis"></span></button>
+  </div>
 </section>
 
 <section class="screen" id="s-pieces">
@@ -110,12 +131,13 @@ input[type=text]{font:inherit;padding:10px 14px;border:4px solid #1E1E1E;border-
 </section>
 
 <section class="screen" id="s-play">
-  <div class="top"><button class="btn small" id="playBack">◀</button><h2 id="progress"></h2><button class="btn small" id="musicBtn2">🎵</button><button class="btn small" id="hintBtn">💡</button></div>
+  <div class="top"><button class="btn small" id="playBack">◀</button><h2 id="progress"></h2><button class="btn small" id="musicBtn2">🎵</button><button class="btn small" id="hintBtn">💡</button><div id="thumb" role="img" aria-label="original"></div></div>
   <div id="boardWrap"><div id="board"></div></div>
 </section>
 
-<div id="celebrate"><div id="bouquet">💐</div><h1 data-t="done"></h1>
-  <div class="row"><button class="btn primary" id="again" data-t="again"></button><button class="btn" id="homeBtn" data-t="home"></button></div></div>
+<div id="celebrate"><div id="bouquetWrap"><div id="bouquet">💐</div></div><h1 data-t="done"></h1>
+  <div class="row"><button class="btn primary" id="saveImg" data-t="saveImg"></button><button class="btn" id="again" data-t="again"></button><button class="btn" id="homeBtn" data-t="home"></button></div></div>
+<div id="bigThumb"><img id="bigThumbImg" alt=""></div>
 
 <div class="modal" id="helpBox"><div class="box"><h2 style="text-align:left;white-space:normal" data-t="helpTitle"></h2><div data-th="helpBody"></div><button class="btn primary" id="helpClose" data-t="ok"></button></div></div>
 <div class="modal" id="delBox"><div class="box"><h2 style="white-space:normal" data-t="delQ"></h2><div class="row"><button class="btn" id="delNo" data-t="no"></button><button class="btn primary" id="delYes" data-t="yesDel"></button></div></div></div>
@@ -123,11 +145,11 @@ input[type=text]{font:inherit;padding:10px 14px;border:4px solid #1E1E1E;border-
 <script>
 const $=id=>document.getElementById(id);
 // ================= 文本（中文 / English）=================
-const TXT={zh:{title:'🧩 家庭照片拼图',newPuzzle:'做一个新拼图',myPuzzles:'我的拼图',empty:'还没有拼图，点上面的橙色按钮做一个吧',pickPhoto:'选一张照片',pickTip:'点一张示例图，或者用自己的照片',album:'从相册选',camera:'拍一张',badFile:'这张照片打不开，请换一张试试。',cantPick:'❓ 选不了照片？',adjust:'调整照片',adjustTip:'拖动照片；拖动文字可以换位置',size:'文字大小：',sS:'小',sM:'中',sL:'大',useThis:'就用这张',howMany:'要拼几块？',start:'开始拼图',done:'太棒了！拼好啦！',again:'🔁 再拼一次',home:'🏠 回首页',ok:'好的，我知道了',delQ:'要删除这个拼图吗？',no:'不删',yesDel:'删除',continue:'继续',replay:'再玩',finished:'已完成',pieces:'块',
+const TXT={zh:{title:'🧩 家庭照片拼图',newPuzzle:'做一个新拼图',myPuzzles:'我的拼图',empty:'还没有拼图，点上面的橙色按钮做一个吧',pickPhoto:'选一张照片',pickTip:'点一张示例图，或者用自己的照片',album:'从相册选',camera:'拍一张',badFile:'这张照片打不开，请换一张试试。',cantPick:'❓ 选不了照片？',adjust:'调整照片',adjustTip:'单指拖动、双指缩放，选好要拼的部分',saveImg:'💾 保存图片',easy:'简单',normal:'普通',hard:'挑战',more:'更难：',size:'文字大小：',sS:'小',sM:'中',sL:'大',useThis:'就用这张',howMany:'要拼几块？',start:'开始拼图',done:'太棒了！拼好啦！',again:'🔁 再拼一次',home:'🏠 回首页',ok:'好的，我知道了',delQ:'要删除这个拼图吗？',no:'不删',yesDel:'删除',continue:'继续',replay:'再玩',finished:'已完成',pieces:'块',
  helpTitle:'选不了照片怎么办？',helpBody:'<p>可以先用示例图。想用自己的照片，请家人帮忙：</p><ul><li><b>iPhone / iPad：</b>设置 → Safari → 相机 / 照片 → 允许</li><li><b>安卓：</b>设置 → 应用 → 浏览器 → 权限 → 打开相机和照片</li><li>在微信里打开的话，点右上角“…”，选“在浏览器中打开”。</li></ul><p>照片只保存在这台设备上，不会上传。</p>',
  labelDefault:d=>`${d.getFullYear()}年${d.getMonth()+1}月制作`,prog:(a,b)=>`已拼好 ${a} / ${b}`,
  v:{hello:'你好！我们一起来拼照片吧。',pick:'请选一张照片。',adjust:'拖动照片，选好要拼的部分。还可以在照片上写几个字。',small:'这张照片有点小，可能不够清楚。可以继续，也可以换一张。',blurry:'这张照片看起来有点模糊。可以继续，也可以换一张。',bad:'这张照片打不开，请换一张试试。',how:'要拼几块？我们先帮你选了九块。',start:'拖动一块到它该去的地方，它会和那里的一块换位置。',resume:'接着上次的拼吧。',good:['真棒！','放对了！','好厉害！','又一朵小花！'],hint:'看，黄色这块应该放到虚线框里。',done:'太棒了！拼好啦！送你一大束花！',saved:'已经保存了，下次可以接着拼。',help:'可以先用示例图。要用自己的照片，请家人帮忙打开权限。',idle:'要帮忙吗？点一下灯泡。'}},
- en:{title:'🧩 Family Photo Puzzle',newPuzzle:'Make a new puzzle',myPuzzles:'My puzzles',empty:'No puzzles yet. Tap the orange button to make one.',pickPhoto:'Choose a photo',pickTip:'Tap a sample, or use your own photo',album:'From album',camera:'Take photo',badFile:'This photo can’t be opened. Please try another.',cantPick:'❓ Can’t choose a photo?',adjust:'Adjust photo',adjustTip:'Drag the photo; drag the text to move it',size:'Text size:',sS:'S',sM:'M',sL:'L',useThis:'Use this photo',howMany:'How many pieces?',start:'Start',done:'Wonderful! All done!',again:'🔁 Play again',home:'🏠 Home',ok:'OK, got it',delQ:'Delete this puzzle?',no:'Keep',yesDel:'Delete',continue:'Continue',replay:'Replay',finished:'Done',pieces:'pieces',
+ en:{title:'🧩 Family Photo Puzzle',newPuzzle:'Make a new puzzle',myPuzzles:'My puzzles',empty:'No puzzles yet. Tap the orange button to make one.',pickPhoto:'Choose a photo',pickTip:'Tap a sample, or use your own photo',album:'From album',camera:'Take photo',badFile:'This photo can’t be opened. Please try another.',cantPick:'❓ Can’t choose a photo?',adjust:'Adjust photo',adjustTip:'Drag with one finger, pinch to zoom',saveImg:'💾 Save image',easy:'Easy',normal:'Normal',hard:'Challenge',more:'Harder:',size:'Text size:',sS:'S',sM:'M',sL:'L',useThis:'Use this photo',howMany:'How many pieces?',start:'Start',done:'Wonderful! All done!',again:'🔁 Play again',home:'🏠 Home',ok:'OK, got it',delQ:'Delete this puzzle?',no:'Keep',yesDel:'Delete',continue:'Continue',replay:'Replay',finished:'Done',pieces:'pieces',
  helpTitle:'Can’t choose a photo?',helpBody:'<p>Try a sample first. To use your own photos, ask family to help:</p><ul><li><b>iPhone / iPad:</b> Settings → Safari → Camera / Photos → Allow</li><li><b>Android:</b> Settings → Apps → Browser → Permissions → Camera &amp; Photos</li></ul><p>Photos stay on this device and are never uploaded.</p>',
  labelDefault:d=>'Made '+d.toLocaleString('en-US',{month:'short'})+' '+d.getFullYear(),prog:(a,b)=>`${a} / ${b} done`,
  v:{hello:'Hello! Let’s make a photo puzzle together.',pick:'Please choose a photo.',adjust:'Drag the photo to choose the part you like. You can also add a few words.',small:'This photo is a little small and may look blurry. You can continue or choose another.',blurry:'This photo looks a little blurry. You can continue or choose another.',bad:'This photo can’t be opened. Please try another.',how:'How many pieces? We picked nine for you.',start:'Drag a piece to where it belongs. It will swap places with the piece there.',resume:'Let’s keep going.',good:['Great!','That’s right!','Well done!','Another flower!'],hint:'Look, the yellow piece goes in the dashed box.',done:'Wonderful! All done! Here are some flowers for you!',saved:'Saved. You can continue next time.',help:'Try a sample first. Ask family to turn on photo access.',idle:'Need help? Tap the light bulb.'}}};
@@ -138,8 +160,9 @@ function applyLang(){document.documentElement.lang=LANG==='zh'?'zh-CN':'en';docu
  $('langBtn').textContent=LANG==='zh'?'🌐 English':'🌐 中文';if(!labelEdited)$('labelTxt').value=t('labelDefault')(new Date());$('labelTxt').placeholder=t('labelDefault')(new Date());
  if($('s-play').classList.contains('on'))upd();if($('s-pieces').classList.contains('on'))buildChoices();renderList()}
 // ================= 语音 + 提示音 =================
-let voiceOn=localStorage.getItem('pz_voice')!=='off',vT;
-function say(s){if(Array.isArray(s))s=s[Math.floor(Math.random()*s.length)];const v=$('voice');v.textContent='🔊 '+s;v.classList.remove('hide');clearTimeout(vT);vT=setTimeout(()=>v.classList.add('hide'),4500);
+if(localStorage.getItem('pz_voice_reset')!=='v1.2'){localStorage.setItem('pz_voice','off');localStorage.setItem('pz_voice_reset','v1.2')} // V1.2：语音默认关闭（旧设置重置一次）
+let voiceOn=localStorage.getItem('pz_voice')==='on',vT;
+function say(s){if(Array.isArray(s))s=s[Math.floor(Math.random()*s.length)];if(!voiceOn){$('voice').classList.add('hide');return}const v=$('voice');v.textContent='🔊 '+s;v.classList.remove('hide');clearTimeout(vT);vT=setTimeout(()=>v.classList.add('hide'),4500);
  if(!voiceOn)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(s);u.lang=LANG==='zh'?'zh-CN':'en-US';u.rate=.9;speechSynthesis.speak(u)}catch(e){}}
 let AC;function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
 function chime(freqs,d=.18){const a=ac();if(!a)return;freqs.forEach((f,i)=>{const o=a.createOscillator(),g=a.createGain(),t0=a.currentTime+i*.09;o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(.18,t0+.01);g.gain.exponentialRampToValueAtTime(.001,t0+d+.3);o.connect(g).connect(a.destination);o.start(t0);o.stop(t0+d+.35)});try{navigator.vibrate&&navigator.vibrate(30)}catch(e){}}
@@ -165,7 +188,7 @@ addEventListener('pointerdown',()=>{ac();if(musicOn&&!music)startMusic()},{captu
 function onTap(el,fn){let down=null;el.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY,id:e.pointerId}});
  el.addEventListener('pointerup',e=>{if(!down||down.id!==e.pointerId)return;const m=Math.hypot(e.clientX-down.x,e.clientY-down.y);down=null;if(m<25){lastTap=Date.now();fn(e)}});
  el.addEventListener('click',e=>fn(e))}
-let lastTap=0;addEventListener('click',e=>{if(Date.now()-lastTap<650){e.preventDefault();e.stopPropagation()}},true); // 吞掉 pointerup 之后浏览器补发的“幽灵点击” // 键盘 / 读屏触发
+let lastTap=0;addEventListener('click',e=>{if(e.isTrusted&&Date.now()-lastTap<650){e.preventDefault();e.stopPropagation()}},true); // 吞掉 pointerup 之后浏览器补发的“幽灵点击” // 键盘 / 读屏触发
 function go(id,v){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));scrollTo(0,0);if(v)say(v);if(id==='s-home')renderList();if(id==='s-play')requestAnimationFrame(layout)}
 document.querySelectorAll('[data-back]').forEach(b=>onTap(b,()=>go(b.dataset.back)));
 onTap($('langBtn'),()=>{LANG=LANG==='zh'?'en':'zh';localStorage.setItem('pz_lang',LANG);applyLang();say(V('hello'))});
@@ -200,9 +223,9 @@ async function onFile(e){const f=e.target.files[0];e.target.value='';if(!f)retur
 $('fileAlbum').onchange=onFile;$('fileCam').onchange=onFile;
 function blurScore(src){const W=256,c=document.createElement('canvas');c.width=c.height=W;const x=c.getContext('2d');const m=Math.min(src.width,src.height);x.drawImage(src,(src.width-m)/2,(src.height-m)/2,m,m,0,0,W,W);const d=x.getImageData(0,0,W,W).data,g=new Float32Array(W*W);for(let i=0;i<W*W;i++)g[i]=.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2];let s=0,s2=0,n=0;for(let y=1;y<W-1;y++)for(let X=1;X<W-1;X++){const i=y*W+X,v=4*g[i]-g[i-1]-g[i+1]-g[i-W]-g[i+W];s+=v;s2+=v*v;n++}const mean=s/n;return s2/n-mean*mean}
 // ================= 裁剪 + 文字框 =================
-function afterLoad(){const im=S.img,mn=im.origMin||Math.min(im.width,im.height);S.base=600/Math.min(im.width,im.height);$('zoom').value=100;S.scale=S.base;S.cx=im.width/2;S.cy=im.height/2;
+function afterLoad(){const im=S.img,mn=im.origMin||Math.min(im.width,im.height);S.base=600/Math.min(im.width,im.height);S.scale=S.base;S.cx=im.width/2;S.cy=im.height/2;
  const bs=blurScore(im);S.quality=mn<600?'small':(bs<25?'blurry':null);const w=$('qualWarn');w.style.display=S.quality?'block':'none';if(S.quality)w.textContent='⚠️ '+V(S.quality);w.dataset.score=Math.round(bs);
- drawCrop();go('s-crop',S.quality?V(S.quality):V('adjust'));tryFace(im)}
+ drawCrop();go('s-crop');tryFace(im)}
 async function tryFace(im){if(!('FaceDetector'in window))return;try{const fs=await new FaceDetector().detect(im);if(fs.length){let x1=1e9,y1=1e9,x2=0,y2=0;fs.forEach(f=>{const b=f.boundingBox;x1=Math.min(x1,b.x);y1=Math.min(y1,b.y);x2=Math.max(x2,b.x+b.width);y2=Math.max(y2,b.y+b.height)});S.cx=(x1+x2)/2;S.cy=(y1+y2)/2;drawCrop()}}catch(e){}}
 const FS={S:34,M:52,L:76};
 function labelRect(ctx){const txt=$('labelTxt').value.trim();if(!txt)return null;let fs=FS[S.lab.size];const F=f=>`bold ${f}px "PingFang SC","Noto Sans CJK SC",sans-serif`;ctx.font=F(fs);const tw=ctx.measureText(txt).width;if(tw+fs*.8>588){fs=Math.floor(fs*588/(tw+fs*.8));ctx.font=F(fs)}const w=ctx.measureText(txt).width+fs*.8,h=fs*1.5;
@@ -211,44 +234,52 @@ function drawLabel(ctx,r){if(!r)return;ctx.save();ctx.fillStyle='rgba(255,255,25
 function clamp(){const h=300/S.scale;S.cx=Math.max(h,Math.min(S.img.width-h,S.cx));S.cy=Math.max(h,Math.min(S.img.height-h,S.cy))}
 function drawCrop(guide=true){clamp();const c=$('cropCv').getContext('2d'),h=300/S.scale;c.drawImage(S.img,S.cx-h,S.cy-h,h*2,h*2,0,0,600,600);const r=labelRect(c);drawLabel(c,r);
  if(r&&guide){c.save();c.setLineDash([10,8]);c.strokeStyle='#E8590C';c.lineWidth=4;c.strokeRect(r.x-4,r.y-4,r.w+8,r.h+8);c.restore()}S.lr=r}
-$('zoom').oninput=()=>{S.scale=S.base*$('zoom').value/100;drawCrop()};
+function zoomBy(f,cx=300,cy=300){const ns=Math.max(S.base,Math.min(S.base*4,S.scale*f));const ix=S.cx+(cx-300)/S.scale,iy=S.cy+(cy-300)/S.scale;S.scale=ns;S.cx=ix-(cx-300)/ns;S.cy=iy-(cy-300)/ns;drawCrop()}
+onTap($('zoomIn'),()=>zoomBy(1.25));onTap($('zoomOut'),()=>zoomBy(.8));
 $('labelTxt').oninput=()=>{labelEdited=true;drawCrop()};
 document.querySelectorAll('.sz').forEach(b=>onTap(b,()=>{S.lab.size=b.dataset.s;document.querySelectorAll('.sz').forEach(x=>x.classList.toggle('sel',x===b));drawCrop()}));
-let cd=null;const cb=$('cropBox');
-cb.onpointerdown=e=>{const r=cb.getBoundingClientRect(),k=600/r.width,px=(e.clientX-r.left)*k,py=(e.clientY-r.top)*k,L=S.lr;
- cd={x:e.clientX,y:e.clientY,k,cx:S.cx,cy:S.cy,label:L&&px>L.x-20&&px<L.x+L.w+20&&py>L.y-20&&py<L.y+L.h+20,lx:S.lab.x,ly:S.lab.y};cb.setPointerCapture(e.pointerId)};
-cb.onpointermove=e=>{if(!cd)return;const dx=(e.clientX-cd.x)*cd.k,dy=(e.clientY-cd.y)*cd.k;if(cd.label){S.lab.x=Math.max(0,Math.min(1,cd.lx+dx/600));S.lab.y=Math.max(0,Math.min(1,cd.ly+dy/600))}else{S.cx=cd.cx-dx/S.scale;S.cy=cd.cy-dy/S.scale}drawCrop()};
-cb.onpointerup=cb.onpointercancel=()=>cd=null;
+let cd=null;const cb=$('cropBox'),PT=new Map();let pinch=null;
+function cropXY(e){const r=cb.getBoundingClientRect(),k=600/r.width;return[(e.clientX-r.left)*k,(e.clientY-r.top)*k,k]}
+cb.onpointerdown=e=>{cb.setPointerCapture(e.pointerId);PT.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(PT.size===2){cd=null;const [a,b]=[...PT.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),s:S.scale};return}
+ const [px,py,k]=cropXY(e),L=S.lr;cd={x:e.clientX,y:e.clientY,k,cx:S.cx,cy:S.cy,label:L&&px>L.x-20&&px<L.x+L.w+20&&py>L.y-20&&py<L.y+L.h+20,lx:S.lab.x,ly:S.lab.y}};
+cb.onpointermove=e=>{if(!PT.has(e.pointerId))return;PT.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(pinch&&PT.size>=2){const [a,b]=[...PT.values()],d=Math.hypot(a.x-b.x,a.y-b.y);const r=cb.getBoundingClientRect(),k=600/r.width;zoomBy(pinch.s*d/pinch.d/S.scale,((a.x+b.x)/2-r.left)*k,((a.y+b.y)/2-r.top)*k);return}
+ if(!cd)return;const dx=(e.clientX-cd.x)*cd.k,dy=(e.clientY-cd.y)*cd.k;if(cd.label){S.lab.x=Math.max(0,Math.min(1,cd.lx+dx/600));S.lab.y=Math.max(0,Math.min(1,cd.ly+dy/600))}else{S.cx=cd.cx-dx/S.scale;S.cy=cd.cy-dy/S.scale}drawCrop()};
+cb.onpointerup=cb.onpointercancel=e=>{PT.delete(e.pointerId);if(PT.size<2)pinch=null;if(PT.size===0)cd=null;else cd=null};
 onTap($('toPieces'),()=>{drawCrop(false);const sq=document.createElement('canvas');sq.width=sq.height=600;sq.getContext('2d').drawImage($('cropCv'),0,0);drawCrop();S.square=sq;S.label=$('labelTxt').value.trim();
  $('previewCv').getContext('2d').drawImage(sq,0,0,300,300);S.n=+(localStorage.getItem('pz_n'))||3;buildChoices();go('s-pieces',V('how'))});
-function buildChoices(){const box=$('pieceChoices');box.innerHTML='';[2,3,4,5,6].forEach(n=>{const b=document.createElement('button');b.className='btn'+(n===S.n?' sel':'');b.dataset.n=n;b.textContent=n*n+' '+t('pieces');onTap(b,()=>{S.n=n;localStorage.setItem('pz_n',n);box.querySelectorAll('.btn').forEach(x=>x.classList.toggle('sel',x===b))});box.appendChild(b)})}
+function buildChoices(){const box=$('pieceChoices');box.innerHTML='';const mk=(n,label,par,cls)=>{const b=document.createElement('button');b.className='btn '+cls+(n===S.n?' sel':'');b.dataset.n=n;b.innerHTML=label?`${label}<small>${n*n} ${t('pieces')}</small>`:`${n*n} ${t('pieces')}`;onTap(b,()=>{S.n=n;localStorage.setItem('pz_n',n);box.querySelectorAll('.btn').forEach(x=>x.classList.toggle('sel',x===b))});par.appendChild(b)};
+ const r1=document.createElement('div');r1.className='row';[[2,'easy'],[3,'normal'],[4,'hard']].forEach(([n,k])=>mk(n,t(k),r1,'diff'));
+ const r2=document.createElement('div');r2.className='row more';r2.innerHTML=`<span>${t('more')}</span>`;[5,6].forEach(n=>mk(n,'',r2,'small'));box.style.flexDirection='column';box.append(r1,r2)}
 onTap($('startPlay'),async()=>{const now=Date.now(),thumb=document.createElement('canvas');thumb.width=thumb.height=200;thumb.getContext('2d').drawImage(S.square,0,0,200,200);
  CUR={id:'pz_'+now.toString(36)+Math.random().toString(36).slice(2,6),schemaVersion:2,createdAt:now,updatedAt:now,label:S.label,image:S.square.toDataURL('image/jpeg',.88),thumb:thumb.toDataURL('image/jpeg',.8),n:S.n,pos:null,correct:0};startPuzzle(false)});
 // ================= 拼图：单一方框 + 互换 =================
 let pos=[],els=[],cell=100,sel=-1,lock=false,idleT;
-function shuffle(n){const N=n*n;let a;do{a=[...Array(N).keys()];for(let i=N-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}while(a.filter((v,i)=>v===i).length>Math.floor(N/4)||a.every((v,i)=>v===i));return a}
+function shuffle(n){const N=n*n,na=N<=4?1:2;const all=[...Array(N).keys()];for(let i=N-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[all[i],all[j]]=[all[j],all[i]]}
+ const anchors=all.slice(0,na),rest=all.slice(na).sort((a,b)=>a-b);let p;do{p=rest.slice();for(let i=p.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[p[i],p[j]]=[p[j],p[i]]}}while(p.some((v,i)=>v===rest[i]));
+ const a=new Array(N);anchors.forEach(k=>a[k]=k);rest.forEach((c,i)=>a[c]=p[i]);return a} // 1–2 块固定在原位做“锚点”，其余全部不在原位
 function startPuzzle(resume){$('celebrate').classList.remove('on');document.querySelectorAll('.petal').forEach(e=>e.remove());const n=S.n,N=n*n,b=$('board');b.innerHTML='';sel=-1;lock=false;
  pos=(resume&&CUR.pos&&CUR.pos.length===N)?CUR.pos.slice():shuffle(n);const url=CUR.image;els=[];
  for(let k=0;k<N;k++){const d=document.createElement('div');d.className='pc';d.dataset.k=k;d.style.backgroundImage=`url(${url})`;b.appendChild(d);els[k]=d}
- go('s-play',resume&&CUR.correct?V('resume'):V('start'));layout();
- pos.forEach((k,c)=>{if(k===c){els[k].classList.add('ok');addMini(c)}});upd();persist();idle()}
+ go('s-play');clearTimeout(vT);$('voice').classList.add('hide');try{speechSynthesis.cancel()}catch(e){}layout();$('thumb').style.backgroundImage=`url(${url})`;$('bigThumbImg').src=url;
+ const pk=document.createElement('div');pk.className='peek';pk.id='peek';pk.style.backgroundImage=`url(${url})`;b.appendChild(pk);onTap(pk,hidePeek);
+ pos.forEach((k,c)=>{if(k===c)els[k].classList.add('ok')});upd();persist()}
 function cellOf(k){return pos.indexOf(k)}
 function layout(){if(!$('s-play').classList.contains('on')||!els.length)return;const w=$('boardWrap'),n=S.n;const size=Math.floor(Math.min(w.clientWidth-8,w.clientHeight-8)/n)*n;cell=size/n;
  const b=$('board');b.style.width=b.style.height=size+'px';
- els.forEach((d,k)=>{d.style.width=d.style.height=cell+'px';d.style.backgroundSize=`${size}px ${size}px`;d.style.backgroundPosition=`${-(k%n)*cell}px ${-Math.floor(k/n)*cell}px`;place(k,true)});
- document.querySelectorAll('.mini').forEach(m=>{const c=+m.dataset.c;m.style.left=((c%n)+.82)*cell+'px';m.style.top=(Math.floor(c/n)+.18)*cell+'px';m.style.setProperty('--fs',cell*.45+'px')})}
+ b.style.setProperty('--cell',cell+'px');els.forEach((d,k)=>{d.style.width=d.style.height=cell+'px';d.style.backgroundSize=`${size}px ${size}px`;d.style.backgroundPosition=`${-(k%n)*cell}px ${-Math.floor(k/n)*cell}px`;place(k,true)});}
 function place(k,instant){const c=cellOf(k),n=S.n,d=els[k];if(instant){d.style.transition='none'}d.style.transform=`translate(${(c%n)*cell}px,${Math.floor(c/n)*cell}px)`;if(instant){void d.offsetWidth;d.style.transition=''}}
 addEventListener('resize',()=>requestAnimationFrame(layout));addEventListener('orientationchange',()=>setTimeout(layout,250));
-function upd(){const c=pos.filter((v,i)=>v===i).length;$('progress').textContent=t('prog')(c,pos.length);return c}
+function upd(){const c=pos.filter((v,i)=>v===i).length;$('progress').textContent=innerWidth<520?`${c} / ${pos.length}`:t('prog')(c,pos.length);return c}
 function persist(){if(!CUR)return;CUR.pos=pos.slice();CUR.correct=pos.filter((v,i)=>v===i).length;CUR.n=S.n;CUR.updatedAt=Date.now();dbPut(CUR)}
-function idle(){clearTimeout(idleT);idleT=setTimeout(()=>{if($('s-play').classList.contains('on')&&upd()<pos.length)say(V('idle'))},40000)}
-function swap(c1,c2){if(c1===c2)return;const a=pos[c1],b=pos[c2];pos[c1]=b;pos[c2]=a;place(a);place(b);clearHint();
- const newly=[c1,c2].filter(c=>pos[c]===c);newly.forEach(c=>{els[c].classList.add('ok');bloom(c)});
+function idle(){} // V1.2：去掉 40 秒语音提醒
+function swap(c1,c2){if(c1===c2||pos[c1]===c1||pos[c2]===c2)return;const a=pos[c1],b=pos[c2];pos[c1]=b;pos[c2]=a;place(a);place(b);clearHint();
+ const newly=[c1,c2].filter(c=>pos[c]===c);newly.forEach(c=>{els[c].classList.add('ok');petals(c)});
  const total=upd();persist();idle();
- if(total===pos.length){lock=true;setTimeout(celebrate,450)}else if(newly.length){chime([784,1047]);say(V('good'))}else chime([392],.08)}
-function bloom(c){const n=S.n,f=document.createElement('div');f.className='flower';f.textContent=['🌸','🌼','🌷','🌺'][c%4];f.style.setProperty('--fs',cell*.7+'px');f.style.left=((c%n)+.5)*cell+'px';f.style.top=(Math.floor(c/n)+.5)*cell+'px';$('board').appendChild(f);
- setTimeout(()=>{f.remove();addMini(c)},1100)}
-function addMini(c){const n=S.n;if(document.querySelector(`.mini[data-c="${c}"]`))return;const m=document.createElement('div');m.className='mini';m.dataset.c=c;m.textContent=['🌸','🌼','🌷','🌺'][c%4];m.style.setProperty('--fs',cell*.45+'px');m.style.left=((c%n)+.82)*cell+'px';m.style.top=(Math.floor(c/n)+.18)*cell+'px';$('board').appendChild(m)}
+ if(total===pos.length){lock=true;setTimeout(celebrate,450)}else if(newly.length){chime([784,1047])}else chime([392],.08)}
+function petals(c){const n=S.n;for(let i=0;i<5;i++){const f=document.createElement('div');f.className='ptl';f.textContent=['🌸','💮','🌸','🏵️','🌸'][i];f.style.setProperty('--fs',Math.max(12,cell*.14)+'px');
+ f.style.left=((c%n)+.3+Math.random()*.4)*cell+'px';f.style.top=(Math.floor(c/n)+.3+Math.random()*.3)*cell+'px';f.style.setProperty('--dx',(Math.random()-.5)*cell*.8+'px');f.style.setProperty('--dy',cell*(.3+Math.random()*.4)+'px');f.style.setProperty('--rt',(Math.random()*240-120)+'deg');f.style.animationDelay=i*60+'ms';$('board').appendChild(f);setTimeout(()=>f.remove(),1600)}}
 // 拖动 / 点选（全部用 pointer 事件）
 let dg=null;
 $('board').addEventListener('pointerdown',e=>{if(lock)return;const d=e.target.closest('.pc');if(!d)return;const k=+d.dataset.k,c=cellOf(k);if(pos[c]===c){chime([330],.06);return}
@@ -257,17 +288,24 @@ $('board').addEventListener('pointermove',e=>{if(!dg||e.pointerId!==dg.id)return
  if(!dg.moved){dg.moved=true;dg.d.classList.add('drag');clearSel()}const n=S.n;dg.d.style.transform=`translate(${(dg.c%n)*cell+dx}px,${Math.floor(dg.c/n)*cell+dy}px) scale(1.06)`});
 function endDrag(e){if(!dg||e.pointerId!==dg.id)return;const g=dg;dg=null;g.d.classList.remove('drag');const n=S.n;
  if(!g.moved){ // 点选
-  if(sel<0){sel=g.c;g.d.classList.add('selp');chime([523],.06)}else if(sel===g.c){clearSel()}else{const s=sel;clearSel();swap(s,g.c)}return}
+  if(sel<0){hidePeek();sel=g.c;g.d.classList.add('selp');chime([523],.06)}else if(sel===g.c){clearSel()}else{const s=sel;clearSel();swap(s,g.c)}return}
  const x=e.clientX-g.r.left,y=e.clientY-g.r.top,tc=Math.floor(y/cell)*n+Math.floor(x/cell);
- if(x>=0&&y>=0&&x<cell*n&&y<cell*n&&tc!==g.c&&pos[tc]!==tc)swap(g.c,tc);else place(g.k)}
+ if(x>=0&&y>=0&&x<cell*n&&y<cell*n&&tc!==g.c&&pos[tc]!==tc)swap(g.c,tc);else{place(g.k);if(x>=0&&y>=0&&x<cell*n&&y<cell*n&&pos[tc]===tc)chime([330],.06)}}
 $('board').addEventListener('pointerup',endDrag);$('board').addEventListener('pointercancel',endDrag);
 function clearSel(){if(sel>=0){els[pos[sel]].classList.remove('selp')}sel=-1}
-function clearHint(){document.querySelectorAll('.hintp').forEach(e=>e.classList.remove('hintp'));document.querySelectorAll('.target').forEach(e=>e.remove())}
-onTap($('hintBtn'),()=>{if(lock)return;clearHint();idle();const wrong=[...pos.keys()].filter(c=>pos[c]!==c);if(!wrong.length)return;const k=wrong.map(c=>pos[c])[Math.floor(Math.random()*wrong.length)],n=S.n;
- els[k].classList.add('hintp');const tg=document.createElement('div');tg.className='target';tg.style.cssText+=`left:${(k%n)*cell}px;top:${Math.floor(k/n)*cell}px;width:${cell}px;height:${cell}px`;$('board').appendChild(tg);setTimeout(clearHint,3500);say(V('hint'))});
-onTap($('playBack'),()=>{persist();go('s-home',V('saved'))});
-function celebrate(){clearTimeout(idleT);$('celebrate').classList.add('on');chime([523,659,784,1047],.4);say(V('done'));
- const fl=['🌸','🌼','🌷','🌺','🌹','💮','🌻'];for(let i=0;i<40;i++){const p=document.createElement('div');p.className='petal';p.textContent=fl[i%fl.length];p.style.left=Math.random()*100+'vw';p.style.fontSize=(24+Math.random()*36)+'px';p.style.animationDuration=(3+Math.random()*3)+'s';p.style.animationDelay=Math.random()*1.5+'s';document.body.appendChild(p)}}
+let peekT;function hidePeek(){clearTimeout(peekT);const p=$('peek');if(p)p.classList.remove('on')}function clearHint(){hidePeek()}
+onTap($('hintBtn'),()=>{if(lock)return;const p=$('peek');if(!p)return;clearSel();p.classList.add('on');clearTimeout(peekT);peekT=setTimeout(hidePeek,2500)});
+// 右上角原图缩略图：按住放大，松开隐藏
+(()=>{const th=$('thumb'),big=$('bigThumb');const on=e=>{e.preventDefault();th.setPointerCapture&&th.setPointerCapture(e.pointerId);big.classList.add('on')},off=()=>big.classList.remove('on');
+ th.addEventListener('pointerdown',on);th.addEventListener('pointerup',off);th.addEventListener('pointercancel',off);th.addEventListener('lostpointercapture',off);th.addEventListener('contextmenu',e=>e.preventDefault())})();
+onTap($('playBack'),()=>{persist();go('s-home')});
+function celebrate(){els.forEach(e=>e.classList.remove('ok'));$('celebrate').classList.add('on');$('bouquetWrap').classList.remove('fade');setTimeout(()=>$('bouquetWrap').classList.add('fade'),2600);chime([523,659,784,1047],.4);
+ const fl=['🌸','🌼','🌷','🌺','🌹','💮','🌻'];for(let i=0;i<24;i++){const p=document.createElement('div');p.className='petal';p.textContent=fl[i%fl.length];p.style.left=Math.random()*100+'vw';p.style.fontSize=(24+Math.random()*36)+'px';p.style.animationDuration=(3+Math.random()*3)+'s';p.style.animationDelay=Math.random()*1.5+'s';document.body.appendChild(p)}}
+onTap($('saveImg'),saveImage);
+async function saveImage(){const c=document.createElement('canvas');c.width=c.height=1200;const x=c.getContext('2d');const im=new Image();im.src=CUR.image;await im.decode().catch(()=>{});x.drawImage(im,0,0,1200,1200);
+ const blob=await new Promise(r=>c.toBlob(r,'image/png'));const name=(CUR.label||'puzzle').replace(/[\\/:*?"<>|\s]+/g,'_')+'.png';window.__lastSave={size:blob.size,name};
+ try{const f=new File([blob],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:t('title')});window.__lastSave.via='share';return}}catch(e){if(e&&e.name==='AbortError')return}
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();window.__lastSave.via='download';setTimeout(()=>URL.revokeObjectURL(a.href),5000)}
 onTap($('again'),()=>{CUR.pos=null;startPuzzle(false)});onTap($('homeBtn'),()=>{$('celebrate').classList.remove('on');document.querySelectorAll('.petal').forEach(e=>e.remove());go('s-home')});
 // ================= 启动 =================
 setMusicBtns();applyLang();say(V('hello'));
