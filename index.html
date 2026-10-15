@@ -145,19 +145,53 @@ body.ending #boardWrap{align-items:flex-start}
 @media (orientation:landscape) and (max-height:600px){#tutCard{flex-direction:row;flex-wrap:wrap;justify-content:center;width:min(96vw,820px);padding:10px 14px;gap:6px 16px}
  .stage{width:calc(100vh - 120px);height:calc(100vh - 120px)}.tcol{flex:1;min-width:300px;display:flex;flex-direction:column;align-items:center;gap:8px}}
 @media (prefers-reduced-motion:reduce){#tut *{animation:none!important}}
+/* ===== V1.5 首页紧凑 + 我的拼图页 + 退出 ===== */
+#s-home{padding-top:8px;padding-bottom:16px}
+#s-home .prefs{width:100%;max-width:720px;justify-content:space-between;gap:6px;margin:0 0 4px}
+#s-home .prefs .grp{display:flex;gap:6px}
+#s-home .prefs .btn.small{min-height:48px;min-width:48px;padding:4px 10px;font-size:.8em;border-width:3px;border-radius:14px}
+#exitBtn{background:#F1F3F5}
+#s-home h1{margin:4px 0}
+#s-home #newBtn{min-height:64px;margin:6px 0}
+#homeDiff .row{flex-wrap:nowrap}
+#homeDiff .diff{min-height:64px;min-width:0;width:min(28vw,170px);margin:4px;padding:4px 6px}
+#homeDiff .more .diff{width:min(28vw,170px);min-height:52px}
+#s-home .setRow .tog{min-height:48px;font-size:.75em;padding:4px 10px;border-width:3px}
+#listBtn,#s-home #howBtn{min-height:60px;margin:0;font-size:.9em}
+#s-list{padding-bottom:20px}
+.tabs{display:flex;gap:8px;margin:4px 0 8px}.tabs .btn{margin:0;min-height:52px;font-size:.9em}
+#myList{width:min(96vw,1100px);grid-template-columns:repeat(3,1fr);gap:10px}
+@media (min-width:600px){#myList{grid-template-columns:repeat(4,1fr)}}
+@media (min-width:900px){#myList{grid-template-columns:repeat(5,1fr)}}
+.card{padding:6px;border-width:3px;gap:4px}.card .meta{font-size:.65em}.card .go{font-size:.75em;min-height:46px;width:100%;padding:4px}
+.card .del{top:-10px;right:-10px;width:44px;height:44px;font-size:18px}
+#s-bye{justify-content:center;gap:18px;text-align:center}
+#s-bye .big{font-size:4em}
 </style></head><body>
 <div id="voice"></div>
 
 <section class="screen on" id="s-home">
-  <div class="prefs"><button class="btn small" id="langBtn">🌐 English</button><button class="btn small" id="musicBtn">🎵</button><button class="btn small" id="voiceBtn">🔊</button><button class="btn small" id="howBtn" data-t="howTo"></button></div>
+  <div class="prefs"><div class="grp"><button class="btn small" id="langBtn">🌐 English</button><button class="btn small" id="musicBtn">🎵</button><button class="btn small" id="voiceBtn">🔊</button></div><button class="btn small" id="exitBtn" data-t="exit"></button></div>
   <h1 data-t="title"></h1>
   <button class="btn primary wide" id="newBtn"><span class="ic">➕</span><span data-t="newPuzzle"></span></button>
   <p class="tip" style="margin:10px 0 0" data-t="chooseDiff"></p>
   <div id="homeDiff"></div>
   <div class="setRow"><button class="btn small tog" id="togThumb"></button><button class="btn small tog" id="togHint"></button></div>
-  <h2 style="flex:none;margin-top:14px" data-t="myPuzzles"></h2>
-  <p class="tip" id="emptyTip" data-t="empty"></p>
+  <div class="row" style="gap:10px;margin-top:8px"><button class="btn" id="listBtn"></button><button class="btn" id="howBtn" data-t="howTo"></button></div>
+</section>
+
+<section class="screen" id="s-list">
+  <div class="top"><button class="btn small" data-back="s-home">◀</button><h2 data-t="myPuzzles"></h2><span style="width:56px"></span></div>
+  <div class="tabs"><button class="btn sel" id="tabTodo" data-t="tabTodo"></button><button class="btn" id="tabDone" data-t="tabDone"></button></div>
+  <p class="tip" id="emptyTip"></p>
   <div id="myList"></div>
+</section>
+
+<section class="screen" id="s-bye">
+  <div class="big">🌷</div>
+  <h1 data-t="bye"></h1>
+  <p class="tip" data-t="byeTip"></p>
+  <button class="btn primary wide" id="byeBack" data-t="byeBack"></button>
 </section>
 
 <section class="screen" id="s-source">
@@ -222,11 +256,11 @@ body.ending #boardWrap{align-items:flex-start}
 <script>
 const $=id=>document.getElementById(id);
 // ================= 文本（中文 / English）=================
-const TXT={zh:{title:'🧩 家庭照片拼图',newPuzzle:'做一个新拼图',myPuzzles:'我的拼图',empty:'还没有拼图，点上面的橙色按钮做一个吧',pickPhoto:'选一张照片',pickTip:'点一张示例图，或者用自己的照片',album:'从相册选',camera:'拍一张',badFile:'这张照片打不开，请换一张试试。',cantPick:'❓ 选不了照片？',adjust:'调整照片',adjustTip:'单指拖动、双指缩放，选好要拼的部分',saveImg:'💾 保存图片',howTo:'❓ 怎么玩',sample:'点示例图',skip:'跳过',nextStep:'下一步 ▶',letsGo:'开始吧！',aidHint:'💡 看原图',aidThumb:'🖼️ 按住小图放大',tutStep:(i)=>`第 ${i} 步 / 共 3 步`,tut:[['选一张照片','点一张示例图，或者从相册选、用相机拍一张。'],['在方框里调整照片','一根手指拖动照片，两根手指放大缩小。还可以在照片上写几个字。'],['拖一块去换位置','把一块拖到另一个地方，两块就会互换。放对的块会出现 ✓，不能再动。']],tutLabel:'2026年10月制作',chooseDiff:'难度（会一直保持）',newPhoto:'🖼️ 换一张照片',next:(l,n)=>`⬆ 下一关：${l}（${n}块）`,thumbOn:'🖼️ 原图小图：显示',thumbOff:'🖼️ 原图小图：隐藏',hintOn:'💡 提示按钮：显示',hintOff:'💡 提示按钮：隐藏',harder25:'更难',harder36:'最难',timeUsed:(m,s)=>`这次用了 ${m?m+' 分 ':''}${s} 秒`,best:(m,s)=>`这个难度最好成绩：${m?m+' 分 ':''}${s} 秒`,newBest:'🎉 新的最好成绩！',easy:'简单',normal:'普通',hard:'挑战',more:'更难：',size:'文字大小：',sS:'小',sM:'中',sL:'大',useThis:'就用这张',howMany:'要拼几块？',start:'开始拼图',done:'太棒了！拼好啦！',again:'🔁 再玩一次',home:'🏠 回主菜单',ok:'好的，我知道了',delQ:'要删除这个拼图吗？',no:'不删',yesDel:'删除',continue:'继续',replay:'再玩',finished:'已完成',pieces:'块',
+const TXT={zh:{exit:'🚪 退出',bye:'再见，下次见！',byeTip:'拼图已经保存好了，音乐已关闭。',byeBack:'🔄 重新开始',tabTodo:'没拼完',tabDone:'已完成',listBtn:(n)=>`📁 我的拼图（${n}）`,emptyTodo:'没有没拼完的拼图',emptyDone:'还没有拼完的拼图',title:'🧩 家庭照片拼图',newPuzzle:'做一个新拼图',myPuzzles:'我的拼图',empty:'还没有拼图，点上面的橙色按钮做一个吧',pickPhoto:'选一张照片',pickTip:'点一张示例图，或者用自己的照片',album:'从相册选',camera:'拍一张',badFile:'这张照片打不开，请换一张试试。',cantPick:'❓ 选不了照片？',adjust:'调整照片',adjustTip:'单指拖动、双指缩放，选好要拼的部分',saveImg:'💾 保存图片',howTo:'❓ 怎么玩',sample:'点示例图',skip:'跳过',nextStep:'下一步 ▶',letsGo:'开始吧！',aidHint:'💡 看原图',aidThumb:'🖼️ 按住小图放大',tutStep:(i)=>`第 ${i} 步 / 共 3 步`,tut:[['选一张照片','点一张示例图，或者从相册选、用相机拍一张。'],['在方框里调整照片','一根手指拖动照片，两根手指放大缩小。还可以在照片上写几个字。'],['拖一块去换位置','把一块拖到另一个地方，两块就会互换。放对的块会出现 ✓，不能再动。']],tutLabel:'2026年10月制作',chooseDiff:'难度（会一直保持）',newPhoto:'🖼️ 换一张照片',next:(l,n)=>`⬆ 下一关：${l}（${n}块）`,thumbOn:'🖼️ 原图小图：显示',thumbOff:'🖼️ 原图小图：隐藏',hintOn:'💡 提示按钮：显示',hintOff:'💡 提示按钮：隐藏',harder25:'更难',harder36:'最难',timeUsed:(m,s)=>`这次用了 ${m?m+' 分 ':''}${s} 秒`,best:(m,s)=>`这个难度最好成绩：${m?m+' 分 ':''}${s} 秒`,newBest:'🎉 新的最好成绩！',easy:'简单',normal:'普通',hard:'挑战',more:'更难：',size:'文字大小：',sS:'小',sM:'中',sL:'大',useThis:'就用这张',howMany:'要拼几块？',start:'开始拼图',done:'太棒了！拼好啦！',again:'🔁 再玩一次',home:'🏠 回主菜单',ok:'好的，我知道了',delQ:'要删除这个拼图吗？',no:'不删',yesDel:'删除',continue:'继续',replay:'再玩',finished:'已完成',pieces:'块',
  helpTitle:'选不了照片怎么办？',helpBody:'<p>可以先用示例图。想用自己的照片，请家人帮忙：</p><ul><li><b>iPhone / iPad：</b>设置 → Safari → 相机 / 照片 → 允许</li><li><b>安卓：</b>设置 → 应用 → 浏览器 → 权限 → 打开相机和照片</li><li>在微信里打开的话，点右上角“…”，选“在浏览器中打开”。</li></ul><p>照片只保存在这台设备上，不会上传。</p>',
  labelDefault:d=>`${d.getFullYear()}年${d.getMonth()+1}月制作`,prog:(a,b)=>`已拼好 ${a} / ${b}`,
  v:{hello:'你好！我们一起来拼照片吧。',pick:'请选一张照片。',adjust:'拖动照片，选好要拼的部分。还可以在照片上写几个字。',small:'这张照片有点小，可能不够清楚。可以继续，也可以换一张。',blurry:'这张照片看起来有点模糊。可以继续，也可以换一张。',bad:'这张照片打不开，请换一张试试。',how:'要拼几块？我们先帮你选了九块。',start:'拖动一块到它该去的地方，它会和那里的一块换位置。',resume:'接着上次的拼吧。',good:['真棒！','放对了！','好厉害！','又一朵小花！'],hint:'看，黄色这块应该放到虚线框里。',done:'太棒了！拼好啦！送你一大束花！',saved:'已经保存了，下次可以接着拼。',help:'可以先用示例图。要用自己的照片，请家人帮忙打开权限。',idle:'要帮忙吗？点一下灯泡。'}},
- en:{title:'🧩 Family Photo Puzzle',newPuzzle:'Make a new puzzle',myPuzzles:'My puzzles',empty:'No puzzles yet. Tap the orange button to make one.',pickPhoto:'Choose a photo',pickTip:'Tap a sample, or use your own photo',album:'From album',camera:'Take photo',badFile:'This photo can’t be opened. Please try another.',cantPick:'❓ Can’t choose a photo?',adjust:'Adjust photo',adjustTip:'Drag with one finger, pinch to zoom',saveImg:'💾 Save image',howTo:'❓ How to play',sample:'Tap a sample',skip:'Skip',nextStep:'Next ▶',letsGo:'Let’s start!',aidHint:'💡 See the picture',aidThumb:'🖼️ Hold to enlarge',tutStep:(i)=>`Step ${i} of 3`,tut:[['Choose a photo','Tap a sample picture, pick one from your album, or take a photo.'],['Fit the photo in the frame','Drag with one finger, pinch with two fingers to zoom. You can also add a few words.'],['Drag a piece to swap','Drag a piece onto another spot and the two swap places. Correct pieces get a ✓ and stay put.']],tutLabel:'Made Oct 2026',chooseDiff:'Difficulty (stays until you change it)',newPhoto:'🖼️ New photo',next:(l,n)=>`⬆ Next level: ${l} (${n} pieces)`,thumbOn:'🖼️ Small picture: shown',thumbOff:'🖼️ Small picture: hidden',hintOn:'💡 Hint button: shown',hintOff:'💡 Hint button: hidden',harder25:'Harder',harder36:'Hardest',timeUsed:(m,s)=>`Time this round: ${m?m+' min ':''}${s} sec`,best:(m,s)=>`Best for this level: ${m?m+' min ':''}${s} sec`,newBest:'🎉 New personal best!',easy:'Easy',normal:'Normal',hard:'Challenge',more:'Harder:',size:'Text size:',sS:'S',sM:'M',sL:'L',useThis:'Use this photo',howMany:'How many pieces?',start:'Start',done:'Wonderful! All done!',again:'🔁 Play again',home:'🏠 Main menu',ok:'OK, got it',delQ:'Delete this puzzle?',no:'Keep',yesDel:'Delete',continue:'Continue',replay:'Replay',finished:'Done',pieces:'pieces',
+ en:{exit:'🚪 Exit',bye:'See you next time!',byeTip:'Your puzzles are saved and the music is off.',byeBack:'🔄 Back',tabTodo:'Not finished',tabDone:'Finished',listBtn:(n)=>`📁 My puzzles (${n})`,emptyTodo:'No unfinished puzzles',emptyDone:'No finished puzzles yet',title:'🧩 Family Photo Puzzle',newPuzzle:'Make a new puzzle',myPuzzles:'My puzzles',empty:'No puzzles yet. Tap the orange button to make one.',pickPhoto:'Choose a photo',pickTip:'Tap a sample, or use your own photo',album:'From album',camera:'Take photo',badFile:'This photo can’t be opened. Please try another.',cantPick:'❓ Can’t choose a photo?',adjust:'Adjust photo',adjustTip:'Drag with one finger, pinch to zoom',saveImg:'💾 Save image',howTo:'❓ How to play',sample:'Tap a sample',skip:'Skip',nextStep:'Next ▶',letsGo:'Let’s start!',aidHint:'💡 See the picture',aidThumb:'🖼️ Hold to enlarge',tutStep:(i)=>`Step ${i} of 3`,tut:[['Choose a photo','Tap a sample picture, pick one from your album, or take a photo.'],['Fit the photo in the frame','Drag with one finger, pinch with two fingers to zoom. You can also add a few words.'],['Drag a piece to swap','Drag a piece onto another spot and the two swap places. Correct pieces get a ✓ and stay put.']],tutLabel:'Made Oct 2026',chooseDiff:'Difficulty (stays until you change it)',newPhoto:'🖼️ New photo',next:(l,n)=>`⬆ Next level: ${l} (${n} pieces)`,thumbOn:'🖼️ Small picture: shown',thumbOff:'🖼️ Small picture: hidden',hintOn:'💡 Hint button: shown',hintOff:'💡 Hint button: hidden',harder25:'Harder',harder36:'Hardest',timeUsed:(m,s)=>`Time this round: ${m?m+' min ':''}${s} sec`,best:(m,s)=>`Best for this level: ${m?m+' min ':''}${s} sec`,newBest:'🎉 New personal best!',easy:'Easy',normal:'Normal',hard:'Challenge',more:'Harder:',size:'Text size:',sS:'S',sM:'M',sL:'L',useThis:'Use this photo',howMany:'How many pieces?',start:'Start',done:'Wonderful! All done!',again:'🔁 Play again',home:'🏠 Main menu',ok:'OK, got it',delQ:'Delete this puzzle?',no:'Keep',yesDel:'Delete',continue:'Continue',replay:'Replay',finished:'Done',pieces:'pieces',
  helpTitle:'Can’t choose a photo?',helpBody:'<p>Try a sample first. To use your own photos, ask family to help:</p><ul><li><b>iPhone / iPad:</b> Settings → Safari → Camera / Photos → Allow</li><li><b>Android:</b> Settings → Apps → Browser → Permissions → Camera &amp; Photos</li></ul><p>Photos stay on this device and are never uploaded.</p>',
  labelDefault:d=>'Made '+d.toLocaleString('en-US',{month:'short'})+' '+d.getFullYear(),prog:(a,b)=>`${a} / ${b} done`,
  v:{hello:'Hello! Let’s make a photo puzzle together.',pick:'Please choose a photo.',adjust:'Drag the photo to choose the part you like. You can also add a few words.',small:'This photo is a little small and may look blurry. You can continue or choose another.',blurry:'This photo looks a little blurry. You can continue or choose another.',bad:'This photo can’t be opened. Please try another.',how:'How many pieces? We picked nine for you.',start:'Drag a piece to where it belongs. It will swap places with the piece there.',resume:'Let’s keep going.',good:['Great!','That’s right!','Well done!','Another flower!'],hint:'Look, the yellow piece goes in the dashed box.',done:'Wonderful! All done! Here are some flowers for you!',saved:'Saved. You can continue next time.',help:'Try a sample first. Ask family to turn on photo access.',idle:'Need help? Tap the light bulb.'}}};
@@ -241,7 +275,7 @@ if(localStorage.getItem('pz_voice_reset')!=='v1.2'){localStorage.setItem('pz_voi
 let voiceOn=localStorage.getItem('pz_voice')==='on',vT;
 function say(s){if(Array.isArray(s))s=s[Math.floor(Math.random()*s.length)];if(!voiceOn){$('voice').classList.add('hide');return}const v=$('voice');v.textContent='🔊 '+s;v.classList.remove('hide');clearTimeout(vT);vT=setTimeout(()=>v.classList.add('hide'),4500);
  if(!voiceOn)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(s);u.lang=LANG==='zh'?'zh-CN':'en-US';u.rate=.9;speechSynthesis.speak(u)}catch(e){}}
-let AC;function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+let AC;let exited=false;function ac(){if(exited)return AC;if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
 function chime(freqs,d=.18){const a=ac();if(!a)return;freqs.forEach((f,i)=>{const o=a.createOscillator(),g=a.createGain(),t0=a.currentTime+i*.09;o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(.18,t0+.01);g.gain.exponentialRampToValueAtTime(.001,t0+d+.3);o.connect(g).connect(a.destination);o.start(t0);o.stop(t0+d+.35)});try{navigator.vibrate&&navigator.vibrate(30)}catch(e){}}
 // ================= 背景音乐：WebAudio 生成的五声音阶钢琴 + 柔和长音 =================
 let musicOn=localStorage.getItem('pz_music')!=='off',music=null;
@@ -260,13 +294,13 @@ function startMusic(){const a=ac();if(!a||music)return;const out=a.createGain();
 function stopMusic(){if(!music)return;const m=music;music=null;m.out.gain.linearRampToValueAtTime(0,m.a.currentTime+.6);setTimeout(()=>{clearInterval(m.iv);m.out.disconnect()},700)}
 function setMusicBtns(){['musicBtn','musicBtn2'].forEach(id=>{$(id).textContent=musicOn?'🎵':'🔇';$(id).setAttribute('aria-label',musicOn?'music on':'music off')})}
 function toggleMusic(){musicOn=!musicOn;localStorage.setItem('pz_music',musicOn?'on':'off');setMusicBtns();musicOn?startMusic():stopMusic()}
-addEventListener('pointerdown',()=>{ac();if(musicOn&&!music)startMusic()},{capture:true});
+addEventListener('pointerdown',()=>{if(exited)return;ac();if(musicOn&&!music)startMusic()},{capture:true});
 // ================= 点击：用 pointerup 处理，避免拖动后第一下点击被吞 =================
 function onTap(el,fn){let down=null;el.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY,id:e.pointerId}});
  el.addEventListener('pointerup',e=>{if(!down||down.id!==e.pointerId)return;const m=Math.hypot(e.clientX-down.x,e.clientY-down.y);down=null;if(m<25){lastTap=Date.now();fn(e)}});
  el.addEventListener('click',e=>fn(e))}
 let lastTap=0;addEventListener('click',e=>{if(e.isTrusted&&Date.now()-lastTap<650){e.preventDefault();e.stopPropagation()}},true); // 吞掉 pointerup 之后浏览器补发的“幽灵点击” // 键盘 / 读屏触发
-function go(id,v){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));scrollTo(0,0);if(v)say(v);if(id==='s-home')renderList();if(id==='s-play')requestAnimationFrame(layout)}
+function go(id,v){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));scrollTo(0,0);if(v)say(v);if(id==='s-home'||id==='s-list')renderList();if(id==='s-play')requestAnimationFrame(layout)}
 document.querySelectorAll('[data-back]').forEach(b=>onTap(b,()=>go(b.dataset.back)));
 onTap($('langBtn'),()=>{LANG=LANG==='zh'?'en':'zh';localStorage.setItem('pz_lang',LANG);applyLang();say(V('hello'))});
 onTap($('musicBtn'),toggleMusic);onTap($('musicBtn2'),toggleMusic);
@@ -280,10 +314,13 @@ async function dbPut(o){await dbReady;if(!DB)return;return new Promise(ok=>{cons
 async function dbAll(){await dbReady;if(!DB)return[];return new Promise(ok=>{const r=tx('readonly').getAll();r.onsuccess=()=>ok(r.result||[]);r.onerror=()=>ok([])})}
 async function dbDel(id){await dbReady;return new Promise(ok=>{const r=tx('readwrite').delete(id);r.onsuccess=r.onerror=()=>ok()})}
 let CUR=null; // 当前拼图记录
-async function renderList(){const all=(await dbAll()).sort((a,b)=>b.updatedAt-a.updatedAt);const L=$('myList');L.innerHTML='';$('emptyTip').style.display=all.length?'none':'block';
+let listTab='todo';
+async function renderList(){const every=(await dbAll()).sort((a,b)=>b.updatedAt-a.updatedAt);$('listBtn').textContent=t('listBtn')(every.length);const isDone=p=>p.correct===p.n*p.n;
+ const all=every.filter(p=>listTab==='done'?isDone(p):!isDone(p));const L=$('myList');L.innerHTML='';$('emptyTip').textContent=t(listTab==='done'?'emptyDone':'emptyTodo');$('emptyTip').style.display=all.length?'none':'block';$('tabTodo').classList.toggle('sel',listTab==='todo');$('tabDone').classList.toggle('sel',listTab==='done');
  all.forEach(p=>{const done=p.correct===p.n*p.n,c=document.createElement('div');c.className='card';c.dataset.id=p.id;
   const d=new Date(p.updatedAt);c.innerHTML=`<img src="${p.thumb}" alt="">${done?`<span class="badge">✔ ${t('finished')}</span>`:''}<div class="meta">${p.label?p.label.replace(/</g,'&lt;')+'<br>':''}${p.n*p.n} ${t('pieces')}${done?'':' · '}${done?'':p.correct+'/'+p.n*p.n}<br>${d.toLocaleDateString(LANG==='zh'?'zh-CN':'en-US')}</div><button class="btn small go">${done?'🔁 '+t('replay'):'▶ '+t('continue')}</button><button class="del" aria-label="delete">✕</button>`;
   onTap(c.querySelector('.go'),()=>openPuzzle(p,done));onTap(c.querySelector('img'),()=>openPuzzle(p,done));onTap(c.querySelector('.del'),()=>{delId=p.id;$('delBox').classList.add('on')});L.appendChild(c)})}
+onTap($('listBtn'),()=>go('s-list'));onTap($('tabTodo'),()=>{listTab='todo';renderList()});onTap($('tabDone'),()=>{listTab='done';renderList()});
 let delId=null;onTap($('delNo'),()=>$('delBox').classList.remove('on'));onTap($('delYes'),async()=>{await dbDel(delId);$('delBox').classList.remove('on');renderList()});
 function openPuzzle(p,replay){const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=600;c.getContext('2d').drawImage(im,0,0,600,600);S.square=c;S.n=p.n;CUR=p;if(replay){CUR.pos=null;CUR.playMs=0}startPuzzle(!replay)};im.src=p.image}
 // ================= 示例图 =================
@@ -416,6 +453,14 @@ function tutShow(i){tutI=i;document.querySelectorAll('#tut .scene').forEach(sc=>
 function tutOpen(){$('tut').classList.add('on');tutShow(0)}
 function tutClose(){$('tut').classList.remove('on');localStorage.setItem('pz_tut','done')}
 onTap($('tutNext'),()=>{if(tutI<2)tutShow(tutI+1);else tutClose()});onTap($('tutSkip'),tutClose);onTap($('howBtn'),tutOpen);
+// ===== V1.5 隐藏时暂停音乐 + 退出 =====
+function pauseAudio(){try{speechSynthesis.cancel()}catch(e){}if(AC&&AC.state==='running')AC.suspend()}
+function resumeAudio(){if(exited||document.hidden)return;if(musicOn&&AC){AC.resume();if(!music)startMusic()}}
+document.addEventListener('visibilitychange',()=>document.hidden?pauseAudio():resumeAudio());
+addEventListener('pagehide',pauseAudio);addEventListener('blur',pauseAudio);addEventListener('focus',resumeAudio);addEventListener('pageshow',resumeAudio);
+onTap($('exitBtn'),()=>{try{if(CUR&&$('s-play').classList.contains('on'))persist()}catch(e){}exited=true;pauseAudio();if(music){const m=music;music=null;clearInterval(m.iv);try{m.out.disconnect()}catch(e){}}
+ go('s-bye');try{window.close()}catch(e){}});
+onTap($('byeBack'),()=>{exited=false;go('s-home');resumeAudio()});
 setMusicBtns();applyLang();say(V('hello'));if(!localStorage.getItem('pz_tut'))tutOpen();
 if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script></body></html>
