@@ -167,6 +167,19 @@ body.ending #boardWrap{align-items:flex-start}
 .card .del{top:-10px;right:-10px;width:44px;height:44px;font-size:18px}
 #s-bye{justify-content:center;gap:18px;text-align:center}
 #s-bye .big{font-size:4em}
+/* ===== V1.6 合并照片 + 快捷难度 + 计时 ===== */
+#playBack{padding:4px 12px;font-size:.85em;white-space:nowrap}
+#progress{font-size:.8em;font-variant-numeric:tabular-nums;overflow:visible;text-overflow:clip;white-space:nowrap;min-width:0}
+@media (orientation:portrait){#s-play .top{gap:6px}#s-play .top .btn.small{min-width:48px;min-height:48px;padding:2px 8px}#thumb{width:50px;height:50px}}
+#qDiff{display:flex;gap:6px;width:100%;max-width:640px;margin:0 auto 6px}
+#qDiff .btn{flex:1;margin:0;min-height:50px;padding:0;font-size:.9em;border-width:3px;border-radius:14px;min-width:0}
+#qDiff .btn small{font-size:.6em;font-weight:400;margin-left:2px}
+@media (orientation:landscape) and (max-height:600px){#s-play #qDiff{order:3;flex-direction:column;width:64px;margin:0 0 0 6px}#qDiff .btn{min-height:44px;flex-direction:column}#qDiff .btn small{display:none}#playBack{font-size:.7em;padding:4px 6px}}
+.card .lv{font-size:.68em;font-weight:700;text-align:center}
+.bd{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}.bd span{background:#2B8A3E;color:#fff;border-radius:10px;padding:1px 7px;font-size:.62em;font-weight:700}
+.bd span.no{background:#E9ECEF;color:#868E96}
+.best{font-size:.6em;color:#2B8A3E;text-align:center}
+#s-list .top [data-back]{padding:4px 12px;font-size:.85em}
 </style></head><body>
 <div id="voice"></div>
 
@@ -181,7 +194,7 @@ body.ending #boardWrap{align-items:flex-start}
 </section>
 
 <section class="screen" id="s-list">
-  <div class="top"><button class="btn small" data-back="s-home">◀</button><h2 data-t="myPuzzles"></h2><span style="width:56px"></span></div>
+  <div class="top"><button class="btn small" data-back="s-home" data-t="back"></button><h2 data-t="myPuzzles"></h2><span style="width:56px"></span></div>
   <div class="tabs"><button class="btn sel" id="tabTodo" data-t="tabTodo"></button><button class="btn" id="tabDone" data-t="tabDone"></button></div>
   <p class="tip" id="emptyTip"></p>
   <div id="myList"></div>
@@ -227,9 +240,11 @@ body.ending #boardWrap{align-items:flex-start}
 </section>
 
 <section class="screen" id="s-play">
-  <div class="top"><button class="btn small" id="playBack">◀</button><h2 id="progress"></h2><button class="btn small" id="musicBtn2">🎵</button><button class="btn small" id="hintBtn">💡</button><div id="thumb" role="img" aria-label="original"></div></div>
+  <div class="top"><button class="btn small" id="playBack" data-t="back"></button><h2 id="progress"></h2><button class="btn small" id="musicBtn2">🎵</button><button class="btn small" id="hintBtn">💡</button><div id="thumb" role="img" aria-label="original"></div></div>
+  <div id="qDiff"></div>
   <div id="boardWrap"><div id="board"></div></div>
 </section>
+<div class="modal" id="qBox"><div class="box" style="text-align:center"><h2 style="white-space:normal;line-height:1.4" id="qQ"></h2><p style="margin:8px 0 14px" data-t="qLose"></p><div class="row"><button class="btn primary" id="qYes" data-t="qYes"></button><button class="btn" id="qNo" data-t="qNo"></button></div></div></div>
 
 <div id="celebrate"><div id="bouquetWrap"><div id="bouquet">💐</div></div><div id="endPanel"><h1 data-t="done"></h1><div id="timeLine"></div><div id="bestLine"></div>
   <div id="endGrid"><button class="btn primary full" id="nextLvl"></button><button class="btn" id="again" data-t="again"></button><button class="btn" id="newPhoto" data-t="newPhoto"></button><button class="btn" id="saveImg" data-t="saveImg"></button><button class="btn" id="homeBtn" data-t="home"></button></div></div></div>
@@ -256,11 +271,11 @@ body.ending #boardWrap{align-items:flex-start}
 <script>
 const $=id=>document.getElementById(id);
 // ================= 文本（中文 / English）=================
-const TXT={zh:{exit:'🚪 退出',bye:'再见，下次见！',byeTip:'拼图已经保存好了，音乐已关闭。',byeBack:'🔄 重新开始',tabTodo:'没拼完',tabDone:'已完成',listBtn:(n)=>`📁 我的拼图（${n}）`,emptyTodo:'没有没拼完的拼图',emptyDone:'还没有拼完的拼图',title:'🧩 家庭照片拼图',newPuzzle:'做一个新拼图',myPuzzles:'我的拼图',empty:'还没有拼图，点上面的橙色按钮做一个吧',pickPhoto:'选一张照片',pickTip:'点一张示例图，或者用自己的照片',album:'从相册选',camera:'拍一张',badFile:'这张照片打不开，请换一张试试。',cantPick:'❓ 选不了照片？',adjust:'调整照片',adjustTip:'单指拖动、双指缩放，选好要拼的部分',saveImg:'💾 保存图片',howTo:'❓ 怎么玩',sample:'点示例图',skip:'跳过',nextStep:'下一步 ▶',letsGo:'开始吧！',aidHint:'💡 看原图',aidThumb:'🖼️ 按住小图放大',tutStep:(i)=>`第 ${i} 步 / 共 3 步`,tut:[['选一张照片','点一张示例图，或者从相册选、用相机拍一张。'],['在方框里调整照片','一根手指拖动照片，两根手指放大缩小。还可以在照片上写几个字。'],['拖一块去换位置','把一块拖到另一个地方，两块就会互换。放对的块会出现 ✓，不能再动。']],tutLabel:'2026年10月制作',chooseDiff:'难度（会一直保持）',newPhoto:'🖼️ 换一张照片',next:(l,n)=>`⬆ 下一关：${l}（${n}块）`,thumbOn:'🖼️ 原图小图：显示',thumbOff:'🖼️ 原图小图：隐藏',hintOn:'💡 提示按钮：显示',hintOff:'💡 提示按钮：隐藏',harder25:'更难',harder36:'最难',timeUsed:(m,s)=>`这次用了 ${m?m+' 分 ':''}${s} 秒`,best:(m,s)=>`这个难度最好成绩：${m?m+' 分 ':''}${s} 秒`,newBest:'🎉 新的最好成绩！',easy:'简单',normal:'普通',hard:'挑战',more:'更难：',size:'文字大小：',sS:'小',sM:'中',sL:'大',useThis:'就用这张',howMany:'要拼几块？',start:'开始拼图',done:'太棒了！拼好啦！',again:'🔁 再玩一次',home:'🏠 回主菜单',ok:'好的，我知道了',delQ:'要删除这个拼图吗？',no:'不删',yesDel:'删除',continue:'继续',replay:'再玩',finished:'已完成',pieces:'块',
+const TXT={zh:{back:'← 返回',qQ:n=>`要换成 ${n} 块吗？`,qLose:'现在这局的进度会清掉',qYes:'换难度',qNo:'继续这局',lastLv:(n,c)=>`上次：${n}块 · ${c}/${n}`,bestT:(n,m,s)=>`最好：${n}块 ${m}:${String(s).padStart(2,'0')}`,noBest:'还没有完成过',notDone:'未完成',pcs:'块',exit:'🚪 退出',bye:'再见，下次见！',byeTip:'拼图已经保存好了，音乐已关闭。',byeBack:'🔄 重新开始',tabTodo:'没拼完',tabDone:'已完成',listBtn:(n)=>`📁 我的拼图（${n}）`,emptyTodo:'没有没拼完的拼图',emptyDone:'还没有拼完的拼图',title:'🧩 家庭照片拼图',newPuzzle:'做一个新拼图',myPuzzles:'我的拼图',empty:'还没有拼图，点上面的橙色按钮做一个吧',pickPhoto:'选一张照片',pickTip:'点一张示例图，或者用自己的照片',album:'从相册选',camera:'拍一张',badFile:'这张照片打不开，请换一张试试。',cantPick:'❓ 选不了照片？',adjust:'调整照片',adjustTip:'单指拖动、双指缩放，选好要拼的部分',saveImg:'💾 保存图片',howTo:'❓ 怎么玩',sample:'点示例图',skip:'跳过',nextStep:'下一步 ▶',letsGo:'开始吧！',aidHint:'💡 看原图',aidThumb:'🖼️ 按住小图放大',tutStep:(i)=>`第 ${i} 步 / 共 3 步`,tut:[['选一张照片','点一张示例图，或者从相册选、用相机拍一张。'],['在方框里调整照片','一根手指拖动照片，两根手指放大缩小。还可以在照片上写几个字。'],['拖一块去换位置','把一块拖到另一个地方，两块就会互换。放对的块会出现 ✓，不能再动。']],tutLabel:'2026年10月制作',chooseDiff:'难度（会一直保持）',newPhoto:'🖼️ 换一张照片',next:(l,n)=>`⬆ 下一关：${l}（${n}块）`,thumbOn:'🖼️ 原图小图：显示',thumbOff:'🖼️ 原图小图：隐藏',hintOn:'💡 提示按钮：显示',hintOff:'💡 提示按钮：隐藏',harder25:'更难',harder36:'最难',timeUsed:(m,s)=>`这次用了 ${m?m+' 分 ':''}${s} 秒`,best:(m,s)=>`这个难度最好成绩：${m?m+' 分 ':''}${s} 秒`,newBest:'🎉 新的最好成绩！',easy:'简单',normal:'普通',hard:'挑战',more:'更难：',size:'文字大小：',sS:'小',sM:'中',sL:'大',useThis:'就用这张',howMany:'要拼几块？',start:'开始拼图',done:'太棒了！拼好啦！',again:'🔁 再玩一次',home:'🏠 回主菜单',ok:'好的，我知道了',delQ:'要删除这个拼图吗？',no:'不删',yesDel:'删除',continue:'继续',replay:'再玩',finished:'已完成',pieces:'块',
  helpTitle:'选不了照片怎么办？',helpBody:'<p>可以先用示例图。想用自己的照片，请家人帮忙：</p><ul><li><b>iPhone / iPad：</b>设置 → Safari → 相机 / 照片 → 允许</li><li><b>安卓：</b>设置 → 应用 → 浏览器 → 权限 → 打开相机和照片</li><li>在微信里打开的话，点右上角“…”，选“在浏览器中打开”。</li></ul><p>照片只保存在这台设备上，不会上传。</p>',
  labelDefault:d=>`${d.getFullYear()}年${d.getMonth()+1}月制作`,prog:(a,b)=>`已拼好 ${a} / ${b}`,
  v:{hello:'你好！我们一起来拼照片吧。',pick:'请选一张照片。',adjust:'拖动照片，选好要拼的部分。还可以在照片上写几个字。',small:'这张照片有点小，可能不够清楚。可以继续，也可以换一张。',blurry:'这张照片看起来有点模糊。可以继续，也可以换一张。',bad:'这张照片打不开，请换一张试试。',how:'要拼几块？我们先帮你选了九块。',start:'拖动一块到它该去的地方，它会和那里的一块换位置。',resume:'接着上次的拼吧。',good:['真棒！','放对了！','好厉害！','又一朵小花！'],hint:'看，黄色这块应该放到虚线框里。',done:'太棒了！拼好啦！送你一大束花！',saved:'已经保存了，下次可以接着拼。',help:'可以先用示例图。要用自己的照片，请家人帮忙打开权限。',idle:'要帮忙吗？点一下灯泡。'}},
- en:{exit:'🚪 Exit',bye:'See you next time!',byeTip:'Your puzzles are saved and the music is off.',byeBack:'🔄 Back',tabTodo:'Not finished',tabDone:'Finished',listBtn:(n)=>`📁 My puzzles (${n})`,emptyTodo:'No unfinished puzzles',emptyDone:'No finished puzzles yet',title:'🧩 Family Photo Puzzle',newPuzzle:'Make a new puzzle',myPuzzles:'My puzzles',empty:'No puzzles yet. Tap the orange button to make one.',pickPhoto:'Choose a photo',pickTip:'Tap a sample, or use your own photo',album:'From album',camera:'Take photo',badFile:'This photo can’t be opened. Please try another.',cantPick:'❓ Can’t choose a photo?',adjust:'Adjust photo',adjustTip:'Drag with one finger, pinch to zoom',saveImg:'💾 Save image',howTo:'❓ How to play',sample:'Tap a sample',skip:'Skip',nextStep:'Next ▶',letsGo:'Let’s start!',aidHint:'💡 See the picture',aidThumb:'🖼️ Hold to enlarge',tutStep:(i)=>`Step ${i} of 3`,tut:[['Choose a photo','Tap a sample picture, pick one from your album, or take a photo.'],['Fit the photo in the frame','Drag with one finger, pinch with two fingers to zoom. You can also add a few words.'],['Drag a piece to swap','Drag a piece onto another spot and the two swap places. Correct pieces get a ✓ and stay put.']],tutLabel:'Made Oct 2026',chooseDiff:'Difficulty (stays until you change it)',newPhoto:'🖼️ New photo',next:(l,n)=>`⬆ Next level: ${l} (${n} pieces)`,thumbOn:'🖼️ Small picture: shown',thumbOff:'🖼️ Small picture: hidden',hintOn:'💡 Hint button: shown',hintOff:'💡 Hint button: hidden',harder25:'Harder',harder36:'Hardest',timeUsed:(m,s)=>`Time this round: ${m?m+' min ':''}${s} sec`,best:(m,s)=>`Best for this level: ${m?m+' min ':''}${s} sec`,newBest:'🎉 New personal best!',easy:'Easy',normal:'Normal',hard:'Challenge',more:'Harder:',size:'Text size:',sS:'S',sM:'M',sL:'L',useThis:'Use this photo',howMany:'How many pieces?',start:'Start',done:'Wonderful! All done!',again:'🔁 Play again',home:'🏠 Main menu',ok:'OK, got it',delQ:'Delete this puzzle?',no:'Keep',yesDel:'Delete',continue:'Continue',replay:'Replay',finished:'Done',pieces:'pieces',
+ en:{back:'← Back',qQ:n=>`Switch to ${n} pieces?`,qLose:'Progress in this game will be cleared',qYes:'Switch',qNo:'Keep playing',lastLv:(n,c)=>`Last: ${n} pcs · ${c}/${n}`,bestT:(n,m,s)=>`Best: ${n} pcs ${m}:${String(s).padStart(2,'0')}`,noBest:'Not finished yet',notDone:'Not done',pcs:'pcs',exit:'🚪 Exit',bye:'See you next time!',byeTip:'Your puzzles are saved and the music is off.',byeBack:'🔄 Back',tabTodo:'Not finished',tabDone:'Finished',listBtn:(n)=>`📁 My puzzles (${n})`,emptyTodo:'No unfinished puzzles',emptyDone:'No finished puzzles yet',title:'🧩 Family Photo Puzzle',newPuzzle:'Make a new puzzle',myPuzzles:'My puzzles',empty:'No puzzles yet. Tap the orange button to make one.',pickPhoto:'Choose a photo',pickTip:'Tap a sample, or use your own photo',album:'From album',camera:'Take photo',badFile:'This photo can’t be opened. Please try another.',cantPick:'❓ Can’t choose a photo?',adjust:'Adjust photo',adjustTip:'Drag with one finger, pinch to zoom',saveImg:'💾 Save image',howTo:'❓ How to play',sample:'Tap a sample',skip:'Skip',nextStep:'Next ▶',letsGo:'Let’s start!',aidHint:'💡 See the picture',aidThumb:'🖼️ Hold to enlarge',tutStep:(i)=>`Step ${i} of 3`,tut:[['Choose a photo','Tap a sample picture, pick one from your album, or take a photo.'],['Fit the photo in the frame','Drag with one finger, pinch with two fingers to zoom. You can also add a few words.'],['Drag a piece to swap','Drag a piece onto another spot and the two swap places. Correct pieces get a ✓ and stay put.']],tutLabel:'Made Oct 2026',chooseDiff:'Difficulty (stays until you change it)',newPhoto:'🖼️ New photo',next:(l,n)=>`⬆ Next level: ${l} (${n} pieces)`,thumbOn:'🖼️ Small picture: shown',thumbOff:'🖼️ Small picture: hidden',hintOn:'💡 Hint button: shown',hintOff:'💡 Hint button: hidden',harder25:'Harder',harder36:'Hardest',timeUsed:(m,s)=>`Time this round: ${m?m+' min ':''}${s} sec`,best:(m,s)=>`Best for this level: ${m?m+' min ':''}${s} sec`,newBest:'🎉 New personal best!',easy:'Easy',normal:'Normal',hard:'Challenge',more:'Harder:',size:'Text size:',sS:'S',sM:'M',sL:'L',useThis:'Use this photo',howMany:'How many pieces?',start:'Start',done:'Wonderful! All done!',again:'🔁 Play again',home:'🏠 Main menu',ok:'OK, got it',delQ:'Delete this puzzle?',no:'Keep',yesDel:'Delete',continue:'Continue',replay:'Replay',finished:'Done',pieces:'pieces',
  helpTitle:'Can’t choose a photo?',helpBody:'<p>Try a sample first. To use your own photos, ask family to help:</p><ul><li><b>iPhone / iPad:</b> Settings → Safari → Camera / Photos → Allow</li><li><b>Android:</b> Settings → Apps → Browser → Permissions → Camera &amp; Photos</li></ul><p>Photos stay on this device and are never uploaded.</p>',
  labelDefault:d=>'Made '+d.toLocaleString('en-US',{month:'short'})+' '+d.getFullYear(),prog:(a,b)=>`${a} / ${b} done`,
  v:{hello:'Hello! Let’s make a photo puzzle together.',pick:'Please choose a photo.',adjust:'Drag the photo to choose the part you like. You can also add a few words.',small:'This photo is a little small and may look blurry. You can continue or choose another.',blurry:'This photo looks a little blurry. You can continue or choose another.',bad:'This photo can’t be opened. Please try another.',how:'How many pieces? We picked nine for you.',start:'Drag a piece to where it belongs. It will swap places with the piece there.',resume:'Let’s keep going.',good:['Great!','That’s right!','Well done!','Another flower!'],hint:'Look, the yellow piece goes in the dashed box.',done:'Wonderful! All done! Here are some flowers for you!',saved:'Saved. You can continue next time.',help:'Try a sample first. Ask family to turn on photo access.',idle:'Need help? Tap the light bulb.'}}};
@@ -269,7 +284,7 @@ const t=k=>TXT[LANG][k],V=k=>TXT[LANG].v[k];
 function applyLang(){document.documentElement.lang=LANG==='zh'?'zh-CN':'en';document.title=t('title').replace('🧩 ','');
  document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));document.querySelectorAll('[data-th]').forEach(e=>e.innerHTML=t(e.dataset.th));
  $('langBtn').textContent=LANG==='zh'?'🌐 English':'🌐 中文';if(!labelEdited)$('labelTxt').value=t('labelDefault')(new Date());$('labelTxt').placeholder=t('labelDefault')(new Date());
- if($('s-play').classList.contains('on'))upd();if($('s-pieces').classList.contains('on'))buildChoices();buildHomeDiff();setToggles();renderList();if($('tut').classList.contains('on'))tutShow(tutI)}
+ if($('s-play').classList.contains('on')){upd();buildQ()}if($('s-pieces').classList.contains('on'))buildChoices();buildHomeDiff();setToggles();renderList();if($('tut').classList.contains('on'))tutShow(tutI)}
 // ================= 语音 + 提示音 =================
 if(localStorage.getItem('pz_voice_reset')!=='v1.2'){localStorage.setItem('pz_voice','off');localStorage.setItem('pz_voice_reset','v1.2')} // V1.2：语音默认关闭（旧设置重置一次）
 let voiceOn=localStorage.getItem('pz_voice')==='on',vT;
@@ -312,27 +327,42 @@ let DB;const dbReady=new Promise(ok=>{const r=indexedDB.open('photo-puzzle',1);r
 function tx(mode){return DB.transaction('puzzles',mode).objectStore('puzzles')}
 async function dbPut(o){await dbReady;if(!DB)return;return new Promise(ok=>{const r=tx('readwrite').put(o);r.onsuccess=r.onerror=()=>ok()})}
 async function dbAll(){await dbReady;if(!DB)return[];return new Promise(ok=>{const r=tx('readonly').getAll();r.onsuccess=()=>ok(r.result||[]);r.onerror=()=>ok([])})}
+function hashStr(str){let h1=0x811c9dc5,h2=0;for(let i=0;i<str.length;i+=3){const c=str.charCodeAt(i);h1=Math.imul(h1^c,16777619);h2=(h2*31+c)|0}return 'h'+(h1>>>0).toString(36)+(h2>>>0).toString(36)+str.length.toString(36)}
+function isFin(p){return p&&p.pos&&p.correct===p.n*p.n}
+let migrated=null;
+function migrate(){return migrated||(migrated=(async()=>{const all=await dbAll();const g={};
+ all.forEach(p=>{p.photoKey=p.photoKey||hashStr(p.image||p.id);const gk=p.srcKey||p.photoKey;(g[gk]=g[gk]||[]).push(p)});
+ for(const k in g){const L=g[k].sort((a,b)=>b.updatedAt-a.updatedAt),base=L[0];const done=Object.assign({},base.done||{}),best=Object.assign({},base.bestMs||{});
+  L.forEach(p=>{Object.assign(done,p.done||{});for(const n in (p.bestMs||{}))if(!best[n]||p.bestMs[n]<best[n])best[n]=p.bestMs[n];
+   if(isFin(p)){done[p.n]=true;if(p.playMs&&(!best[p.n]||p.playMs<best[p.n]))best[p.n]=Math.round(p.playMs)}});
+  const changed=L.length>1||!base.done||base.schemaVersion!==4;base.done=done;base.bestMs=best;base.schemaVersion=4;base.createdAt=Math.min(...L.map(p=>p.createdAt||p.updatedAt));
+  if(changed){await dbPut(base);for(const p of L.slice(1))await dbDel(p.id)}}  // 先写合并结果，再删重复
+ return true})())}
+async function findPhoto(key,src){await migrate();const all=await dbAll();return (src&&all.find(p=>p.srcKey===src))||all.find(p=>p.photoKey===key)}
 async function dbDel(id){await dbReady;return new Promise(ok=>{const r=tx('readwrite').delete(id);r.onsuccess=r.onerror=()=>ok()})}
 let CUR=null; // 当前拼图记录
 let listTab='todo';
-async function renderList(){const every=(await dbAll()).sort((a,b)=>b.updatedAt-a.updatedAt);$('listBtn').textContent=t('listBtn')(every.length);const isDone=p=>p.correct===p.n*p.n;
+async function renderList(){await migrate();const every=(await dbAll()).sort((a,b)=>b.updatedAt-a.updatedAt);$('listBtn').textContent=t('listBtn')(every.length);const isDone=isFin;
  const all=every.filter(p=>listTab==='done'?isDone(p):!isDone(p));const L=$('myList');L.innerHTML='';$('emptyTip').textContent=t(listTab==='done'?'emptyDone':'emptyTodo');$('emptyTip').style.display=all.length?'none':'block';$('tabTodo').classList.toggle('sel',listTab==='todo');$('tabDone').classList.toggle('sel',listTab==='done');
- all.forEach(p=>{const done=p.correct===p.n*p.n,c=document.createElement('div');c.className='card';c.dataset.id=p.id;
-  const d=new Date(p.updatedAt);c.innerHTML=`<img src="${p.thumb}" alt="">${done?`<span class="badge">✔ ${t('finished')}</span>`:''}<div class="meta">${p.label?p.label.replace(/</g,'&lt;')+'<br>':''}${p.n*p.n} ${t('pieces')}${done?'':' · '}${done?'':p.correct+'/'+p.n*p.n}<br>${d.toLocaleDateString(LANG==='zh'?'zh-CN':'en-US')}</div><button class="btn small go">${done?'🔁 '+t('replay'):'▶ '+t('continue')}</button><button class="del" aria-label="delete">✕</button>`;
-  onTap(c.querySelector('.go'),()=>openPuzzle(p,done));onTap(c.querySelector('img'),()=>openPuzzle(p,done));onTap(c.querySelector('.del'),()=>{delId=p.id;$('delBox').classList.add('on')});L.appendChild(c)})}
+ all.forEach(p=>{const done=isFin(p),c=document.createElement('div');c.className='card';c.dataset.id=p.id;const N=p.n*p.n;
+  const dn=Object.keys(p.done||{}).filter(k=>p.done[k]).map(Number).sort((a,b)=>a-b);const bk=Object.keys(p.bestMs||{}).map(Number).sort((a,b)=>b-a)[0];
+  const bl=bk?t('bestT')(bk*bk,...fmt(p.bestMs[bk])):t('noBest');
+  c.innerHTML=`<img src="${p.thumb}" alt=""><div class="lv">${t('lastLv')(N,p.correct||0)}</div><div class="bd">${dn.map(n=>`<span>✓${n*n}</span>`).join('')||`<span class="no">${t('notDone')}</span>`}</div><div class="best">${bl}</div><button class="btn small go">${done?'🔁 '+t('replay'):'▶ '+t('continue')}</button><button class="del" aria-label="delete">✕</button>`;
+  onTap(c.querySelector('.go'),()=>{backTo='s-list';openPuzzle(p,done)});onTap(c.querySelector('img'),()=>{backTo='s-list';openPuzzle(p,done)});onTap(c.querySelector('.del'),()=>{delId=p.id;$('delBox').classList.add('on')});L.appendChild(c)})}
 onTap($('listBtn'),()=>go('s-list'));onTap($('tabTodo'),()=>{listTab='todo';renderList()});onTap($('tabDone'),()=>{listTab='done';renderList()});
 let delId=null;onTap($('delNo'),()=>$('delBox').classList.remove('on'));onTap($('delYes'),async()=>{await dbDel(delId);$('delBox').classList.remove('on');renderList()});
-function openPuzzle(p,replay){const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=600;c.getContext('2d').drawImage(im,0,0,600,600);S.square=c;S.n=p.n;CUR=p;if(replay){CUR.pos=null;CUR.playMs=0}startPuzzle(!replay)};im.src=p.image}
+let backTo='s-home';
+function openPuzzle(p,replay){const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=600;c.getContext('2d').drawImage(im,0,0,600,600);S.square=c;S.n=p.n;CUR=p;if(replay){CUR.pos=null;CUR.playMs=0;CUR.swaps=0}startPuzzle(!replay)};im.src=p.image}
 // ================= 示例图 =================
 const S={img:null,cx:0,cy:0,scale:1,base:1,n:3,square:null,quality:null,lab:{x:.5,y:.88,size:'M'}};let labelEdited=false;
 const SAMPLES=[
  c=>{let g=c.createLinearGradient(0,0,0,800);g.addColorStop(0,'#74C0FC');g.addColorStop(1,'#D0EBFF');c.fillStyle=g;c.fillRect(0,0,800,800);c.fillStyle='#FCC419';c.beginPath();c.arc(620,170,90,0,7);c.fill();c.fillStyle='#51CF66';c.fillRect(0,560,800,240);c.fillStyle='#E03131';c.fillRect(200,380,260,200);c.fillStyle='#862E9C';c.beginPath();c.moveTo(170,390);c.lineTo(330,250);c.lineTo(490,390);c.fill();c.fillStyle='#fff';c.fillRect(290,470,80,110);c.fillStyle='#2F9E44';for(let i=0;i<3;i++){c.beginPath();c.arc(580+i*70,520,45,0,7);c.fill()}},
  c=>{c.fillStyle='#FFE8CC';c.fillRect(0,0,800,800);['#FA5252','#FD7E14','#FAB005','#40C057','#228BE6','#7950F2'].forEach((col,i)=>{c.fillStyle=col;c.beginPath();c.arc(400,800,700-i*90,Math.PI,0);c.fill()});c.fillStyle='#FFE8CC';c.beginPath();c.arc(400,800,160,Math.PI,0);c.fill();c.fillStyle='#fff';[[120,120],[600,90]].forEach(([x,y])=>{c.beginPath();c.arc(x,y,50,0,7);c.arc(x+50,y,60,0,7);c.arc(x+100,y,45,0,7);c.fill()})},
  c=>{c.fillStyle='#1864AB';c.fillRect(0,0,800,800);c.fillStyle='#FFD43B';c.beginPath();c.arc(400,370,230,0,7);c.fill();c.fillStyle='#1E1E1E';c.beginPath();c.arc(320,310,30,0,7);c.arc(480,310,30,0,7);c.fill();c.lineWidth=22;c.strokeStyle='#1E1E1E';c.beginPath();c.arc(400,390,120,.2,Math.PI-.2);c.stroke();for(let i=0;i<12;i++){c.fillStyle=['#F783AC','#FFF','#FFA94D'][i%3];c.beginPath();c.arc(60+i*62,90+(i%2)*40,22,0,7);c.fill()}}];
-SAMPLES.forEach((draw,i)=>{const c=document.createElement('canvas');c.width=c.height=800;draw(c.getContext('2d'));c.className='sample';onTap(c,()=>{S.img=c;afterLoad()});$('samples').appendChild(c)});
+SAMPLES.forEach((draw,i)=>{const c=document.createElement('canvas');c.width=c.height=800;draw(c.getContext('2d'));c.className='sample';onTap(c,()=>{S.img=c;S.srcKey='sample'+i;afterLoad()});$('samples').appendChild(c)});
 async function onFile(e){const f=e.target.files[0];e.target.value='';if(!f)return;$('loadErr').style.display='none';
  try{let bmp;try{bmp=await createImageBitmap(f,{imageOrientation:'from-image'})}catch(_){bmp=await new Promise((ok,no)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=no;im.src=URL.createObjectURL(f)})}
-  const w=bmp.width,h=bmp.height,k=Math.min(1,2048/Math.max(w,h)),c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);c.origMin=Math.min(w,h);S.img=c;afterLoad()}
+  const w=bmp.width,h=bmp.height,k=Math.min(1,2048/Math.max(w,h)),c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);c.origMin=Math.min(w,h);S.img=c;{const m=document.createElement('canvas');m.width=m.height=48;m.getContext('2d').drawImage(c,0,0,48,48);S.srcKey='src'+hashStr(m.toDataURL('image/png'))}afterLoad()}
  catch(err){$('loadErr').style.display='block';say(V('bad'))}}
 $('fileAlbum').onchange=onFile;$('fileCam').onchange=onFile;
 function blurScore(src){const W=256,c=document.createElement('canvas');c.width=c.height=W;const x=c.getContext('2d');const m=Math.min(src.width,src.height);x.drawImage(src,(src.width-m)/2,(src.height-m)/2,m,m,0,0,W,W);const d=x.getImageData(0,0,W,W).data,g=new Float32Array(W*W);for(let i=0;i<W*W;i++)g[i]=.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2];let s=0,s2=0,n=0;for(let y=1;y<W-1;y++)for(let X=1;X<W-1;X++){const i=y*W+X,v=4*g[i]-g[i-1]-g[i+1]-g[i-W]-g[i+W];s+=v;s2+=v*v;n++}const mean=s/n;return s2/n-mean*mean}
@@ -361,8 +391,8 @@ cb.onpointermove=e=>{if(!PT.has(e.pointerId))return;PT.set(e.pointerId,{x:e.clie
  if(pinch&&PT.size>=2){const [a,b]=[...PT.values()],d=Math.hypot(a.x-b.x,a.y-b.y);const r=cb.getBoundingClientRect(),k=600/r.width;zoomBy(pinch.s*d/pinch.d/S.scale,((a.x+b.x)/2-r.left)*k,((a.y+b.y)/2-r.top)*k);return}
  if(!cd)return;const dx=(e.clientX-cd.x)*cd.k,dy=(e.clientY-cd.y)*cd.k;if(cd.label){S.lab.x=Math.max(0,Math.min(1,cd.lx+dx/600));S.lab.y=Math.max(0,Math.min(1,cd.ly+dy/600))}else{S.cx=cd.cx-dx/S.scale;S.cy=cd.cy-dy/S.scale}drawCrop()};
 cb.onpointerup=cb.onpointercancel=e=>{PT.delete(e.pointerId);if(PT.size<2)pinch=null;if(PT.size===0)cd=null;else cd=null};
-onTap($('toPieces'),()=>{drawCrop(false);const sq=document.createElement('canvas');sq.width=sq.height=600;sq.getContext('2d').drawImage($('cropCv'),0,0);drawCrop();S.square=sq;S.label=$('labelTxt').value.trim();
- $('previewCv').getContext('2d').drawImage(sq,0,0,300,300);S.n=getN();newRecord(S.square,S.label,S.n);startPuzzle(false)}); // V1.3：难度在主菜单选，直接开始
+onTap($('toPieces'),async()=>{drawCrop(false);const sq=document.createElement('canvas');sq.width=sq.height=600;sq.getContext('2d').drawImage($('cropCv'),0,0);drawCrop();S.square=sq;S.label=$('labelTxt').value.trim();
+ $('previewCv').getContext('2d').drawImage(sq,0,0,300,300);S.n=getN();backTo='s-home';await newRecord(S.square,S.label,S.n);startPuzzle(false)}); // V1.3：难度在主菜单选，直接开始
 const LEVELS=[[2,'easy'],[3,'normal'],[4,'hard'],[5,'harder25'],[6,'harder36']];
 function getN(){return +(localStorage.getItem('pz_n'))||3}
 function levelName(n){const L=LEVELS.find(x=>x[0]===n);return L?t(L[1]):''}
@@ -376,10 +406,11 @@ onTap($('togHint'),()=>{showHint=!showHint;localStorage.setItem('pz_hint',showHi
 function buildChoices(){const box=$('pieceChoices');box.innerHTML='';const mk=(n,label,par,cls)=>{const b=document.createElement('button');b.className='btn '+cls+(n===S.n?' sel':'');b.dataset.n=n;b.innerHTML=label?`${label}<small>${n*n} ${t('pieces')}</small>`:`${n*n} ${t('pieces')}`;onTap(b,()=>{S.n=n;localStorage.setItem('pz_n',n);box.querySelectorAll('.btn').forEach(x=>x.classList.toggle('sel',x===b))});par.appendChild(b)};
  const r1=document.createElement('div');r1.className='row';[[2,'easy'],[3,'normal'],[4,'hard']].forEach(([n,k])=>mk(n,t(k),r1,'diff'));
  const r2=document.createElement('div');r2.className='row more';r2.innerHTML=`<span>${t('more')}</span>`;[5,6].forEach(n=>mk(n,'',r2,'small'));box.style.flexDirection='column';box.append(r1,r2)}
-function newRecord(sq,label,n){const now=Date.now(),thumb=document.createElement('canvas');thumb.width=thumb.height=200;thumb.getContext('2d').drawImage(sq,0,0,200,200);
- CUR={id:'pz_'+now.toString(36)+Math.random().toString(36).slice(2,6),schemaVersion:3,createdAt:now,updatedAt:now,label,image:sq.toDataURL('image/jpeg',.88),thumb:thumb.toDataURL('image/jpeg',.8),n,pos:null,correct:0,playMs:0}}
-onTap($('startPlay'),async()=>{const now=Date.now(),thumb=document.createElement('canvas');thumb.width=thumb.height=200;thumb.getContext('2d').drawImage(S.square,0,0,200,200);
- CUR={id:'pz_'+now.toString(36)+Math.random().toString(36).slice(2,6),schemaVersion:2,createdAt:now,updatedAt:now,label:S.label,image:S.square.toDataURL('image/jpeg',.88),thumb:thumb.toDataURL('image/jpeg',.8),n:S.n,pos:null,correct:0};startPuzzle(false)});
+async function newRecord(sq,label,n){const now=Date.now(),thumb=document.createElement('canvas');thumb.width=thumb.height=200;thumb.getContext('2d').drawImage(sq,0,0,200,200);
+ const image=sq.toDataURL('image/jpeg',.88),key=hashStr(image),src=S.srcKey||null,old=await findPhoto(key,src);
+ if(old){CUR=old;Object.assign(CUR,{n,pos:null,correct:0,playMs:0,swaps:0,label,image,photoKey:key,srcKey:src||old.srcKey,thumb:thumb.toDataURL('image/jpeg',.8)});return}  // 同一张照片（同一来源）只保留一条，用最新裁剪  // 同一张照片只保留一条记录
+ CUR={id:'pz_'+now.toString(36)+Math.random().toString(36).slice(2,6),photoKey:key,srcKey:src,schemaVersion:4,createdAt:now,updatedAt:now,label,image,thumb:thumb.toDataURL('image/jpeg',.8),n,pos:null,correct:0,playMs:0,swaps:0,done:{},bestMs:{}}}
+onTap($('startPlay'),async()=>{backTo='s-home';await newRecord(S.square,S.label,S.n);startPuzzle(false)});
 // ================= 拼图：单一方框 + 互换 =================
 let pos=[],els=[],cell=100,sel=-1,lock=false,idleT;
 function shuffle(n){const N=n*n,na=N<=4?1:2;const all=[...Array(N).keys()];for(let i=N-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[all[i],all[j]]=[all[j],all[i]]}
@@ -390,7 +421,7 @@ let runFrom=0;function tStart(){if(!runFrom&&!lock&&$('s-play').classList.contai
 function tStop(){if(runFrom&&CUR){CUR.playMs=(CUR.playMs||0)+(performance.now()-runFrom)}runFrom=0}
 document.addEventListener('visibilitychange',()=>{if(document.hidden){tStop();persist()}else tStart()});addEventListener('pagehide',()=>{tStop();persist()});
 function fmt(ms){const s=Math.max(1,Math.round(ms/1000));return[Math.floor(s/60),s%60]}
-function startPuzzle(resume){document.body.classList.remove('ending');runFrom=0;if(!resume&&CUR)CUR.playMs=0;document.body.classList.remove('ending');$('celebrate').classList.remove('on');document.querySelectorAll('.petal').forEach(e=>e.remove());const n=S.n,N=n*n,b=$('board');b.innerHTML='';sel=-1;lock=false;
+function startPuzzle(resume){document.body.classList.remove('ending');runFrom=0;if(!resume&&CUR){CUR.playMs=0;CUR.swaps=0}buildQ();document.body.classList.remove('ending');$('celebrate').classList.remove('on');document.querySelectorAll('.petal').forEach(e=>e.remove());const n=S.n,N=n*n,b=$('board');b.innerHTML='';sel=-1;lock=false;
  pos=(resume&&CUR.pos&&CUR.pos.length===N)?CUR.pos.slice():shuffle(n);const url=CUR.image;els=[];
  for(let k=0;k<N;k++){const d=document.createElement('div');d.className='pc';d.dataset.k=k;d.style.backgroundImage=`url(${url})`;b.appendChild(d);els[k]=d}
  go('s-play');clearTimeout(vT);$('voice').classList.add('hide');try{speechSynthesis.cancel()}catch(e){}layout();$('thumb').style.backgroundImage=`url(${url})`;$('bigThumbImg').src=url;
@@ -402,10 +433,19 @@ function layout(){if(!$('s-play').classList.contains('on')||!els.length)return;c
  b.style.setProperty('--cell',cell+'px');els.forEach((d,k)=>{d.style.width=d.style.height=cell+'px';d.style.backgroundSize=`${size}px ${size}px`;d.style.backgroundPosition=`${-(k%n)*cell}px ${-Math.floor(k/n)*cell}px`;place(k,true)});}
 function place(k,instant){const c=cellOf(k),n=S.n,d=els[k];if(instant){d.style.transition='none'}d.style.transform=`translate(${(c%n)*cell}px,${Math.floor(c/n)*cell}px)`;if(instant){void d.offsetWidth;d.style.transition=''}}
 addEventListener('resize',()=>requestAnimationFrame(layout));addEventListener('orientationchange',()=>setTimeout(layout,250));
-function upd(){const c=pos.filter((v,i)=>v===i).length;$('progress').textContent=innerWidth<520?`${c} / ${pos.length}`:t('prog')(c,pos.length);return c}
+function liveMs(){return CUR?(CUR.playMs||0)+(runFrom?performance.now()-runFrom:0):0}
+function clock(ms){const s=Math.floor(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function upd(){const c=pos.filter((v,i)=>v===i).length;$('progress').textContent=`⏱ ${clock(liveMs())} · ${c}/${pos.length}`;return c}
+setInterval(()=>{if(pos.length&&$('s-play').classList.contains('on'))upd()},500);
+// V1.6：拼图页快捷难度（只改这张照片，不改主菜单难度）
+function buildQ(){const q=$('qDiff');q.innerHTML='';[2,3,4,5,6].forEach(n=>{const b=document.createElement('button');b.className='btn'+(n===S.n?' sel':'');b.dataset.qn=n;b.innerHTML=`${n*n}<small>${t('pcs')}</small>`;onTap(b,()=>askQ(n));q.appendChild(b)})}
+let qTarget=0;function inProgress(){return !lock&&CUR&&((CUR.swaps||0)>0||(CUR.swaps==null&&(CUR.playMs||0)>3000))}
+function askQ(n){if(n===S.n)return;if(inProgress()){qTarget=n;$('qQ').textContent=t('qQ')(n*n);$('qBox').classList.add('on')}else switchQ(n)}
+function switchQ(n){tStop();$('qBox').classList.remove('on');S.n=n;Object.assign(CUR,{n,pos:null,correct:0,playMs:0,swaps:0});startPuzzle(false)}
+onTap($('qYes'),()=>switchQ(qTarget));onTap($('qNo'),()=>$('qBox').classList.remove('on'));
 function persist(){if(!CUR)return;if(runFrom){tStop();tStart()}CUR.pos=pos.slice();CUR.correct=pos.filter((v,i)=>v===i).length;CUR.n=S.n;CUR.updatedAt=Date.now();dbPut(CUR)}
 function idle(){} // V1.2：去掉 40 秒语音提醒
-function swap(c1,c2){if(c1===c2||pos[c1]===c1||pos[c2]===c2)return;const a=pos[c1],b=pos[c2];pos[c1]=b;pos[c2]=a;place(a);place(b);clearHint();
+function swap(c1,c2){if(c1===c2||pos[c1]===c1||pos[c2]===c2)return;const a=pos[c1],b=pos[c2];pos[c1]=b;pos[c2]=a;CUR.swaps=(CUR.swaps||0)+1;place(a);place(b);clearHint();
  const newly=[c1,c2].filter(c=>pos[c]===c);newly.forEach(c=>{els[c].classList.add('ok');petals(c)});
  const total=upd();persist();idle();
  if(total===pos.length){lock=true;setTimeout(celebrate,450)}else if(newly.length){chime([784,1047])}else chime([392],.08)}
@@ -429,9 +469,9 @@ onTap($('hintBtn'),()=>{if(lock)return;const p=$('peek');if(!p)return;clearSel()
 // 右上角原图缩略图：按住放大，松开隐藏
 (()=>{const th=$('thumb'),big=$('bigThumb');const on=e=>{e.preventDefault();th.setPointerCapture&&th.setPointerCapture(e.pointerId);big.classList.add('on')},off=()=>big.classList.remove('on');
  th.addEventListener('pointerdown',on);th.addEventListener('pointerup',off);th.addEventListener('pointercancel',off);th.addEventListener('lostpointercapture',off);th.addEventListener('contextmenu',e=>e.preventDefault())})();
-onTap($('playBack'),()=>{tStop();persist();go('s-home')});
+onTap($('playBack'),()=>{tStop();persist();go(backTo)});
 function celebrate(){document.body.classList.add('ending');requestAnimationFrame(layout);tStop();persist();els.forEach(e=>e.classList.remove('ok'));
- const ms=CUR.playMs||0,n=S.n,key='pz_best_'+n,prev=+localStorage.getItem(key)||0,isBest=!prev||ms<prev;if(isBest)localStorage.setItem(key,Math.round(ms));
+ const ms=CUR.playMs||0,n=S.n;CUR.done=CUR.done||{};CUR.bestMs=CUR.bestMs||{};CUR.done[n]=true;if(!CUR.bestMs[n]||ms<CUR.bestMs[n])CUR.bestMs[n]=Math.round(ms);persist();const key='pz_best_'+n,prev=+localStorage.getItem(key)||0,isBest=!prev||ms<prev;if(isBest)localStorage.setItem(key,Math.round(ms));
  $('timeLine').textContent=t('timeUsed')(...fmt(ms));$('bestLine').textContent=isBest&&prev?t('newBest'):t('best')(...fmt(isBest?ms:prev));if(isBest&&prev)chime([659,784,988,1319],.3);
  const nb=$('nextLvl');if(n>=6){nb.style.display='none'}else{nb.style.display='';nb.textContent=t('next')(levelName(n+1),(n+1)*(n+1))}
  window.__last={ms,best:isBest,prev};$('celebrate').classList.add('on');$('bouquetWrap').classList.remove('fade');setTimeout(()=>$('bouquetWrap').classList.add('fade'),2600);chime([523,659,784,1047],.4);
@@ -441,8 +481,8 @@ async function saveImage(){const c=document.createElement('canvas');c.width=c.he
  const blob=await new Promise(r=>c.toBlob(r,'image/png'));const name=(CUR.label||'puzzle').replace(/[\\/:*?"<>|\s]+/g,'_')+'.png';window.__lastSave={size:blob.size,name};
  try{const f=new File([blob],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:t('title')});window.__lastSave.via='share';return}}catch(e){if(e&&e.name==='AbortError')return}
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();window.__lastSave.via='download';setTimeout(()=>URL.revokeObjectURL(a.href),5000)}
-onTap($('again'),()=>{CUR.pos=null;CUR.playMs=0;startPuzzle(false)});
-onTap($('nextLvl'),()=>{if(S.n>=6)return;const n=S.n+1;localStorage.setItem('pz_n',n);S.n=n;newRecord(S.square,CUR.label,n);startPuzzle(false)});
+onTap($('again'),()=>{CUR.pos=null;CUR.playMs=0;CUR.swaps=0;startPuzzle(false)});
+onTap($('nextLvl'),()=>{if(S.n>=6)return;const n=S.n+1;localStorage.setItem('pz_n',n);S.n=n;Object.assign(CUR,{n,pos:null,correct:0,playMs:0,swaps:0});startPuzzle(false)});
 onTap($('newPhoto'),()=>{document.body.classList.remove('ending');$('celebrate').classList.remove('on');document.querySelectorAll('.petal').forEach(e=>e.remove());go('s-source')});onTap($('homeBtn'),()=>{document.body.classList.remove('ending');$('celebrate').classList.remove('on');document.querySelectorAll('.petal').forEach(e=>e.remove());go('s-home')});
 // ================= 启动 =================
 // ===== V1.4 首次教程 =====
