@@ -1,0 +1,22 @@
+rules_version = '2';
+// 草稿：默认全部拒绝；登录用户只能读写自己的数据；levels 公开只读（游客也能看关卡目录）
+// 测试页使用 smoke/_smoke_test 文档：仅在测试期间开放，正式上线前删除该段
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} { allow read, write: if false; }
+
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    match /progress/{docId} {
+      allow read, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create, update: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+    match /levels/{id} {
+      allow read: if true;
+      allow write: if false; // 只在 Console 里手动维护
+    }
+    // ---- 测试用（上线前删除）----
+    match /smoke/{id} { allow read, write: if id == '_smoke_test'; }
+  }
+}

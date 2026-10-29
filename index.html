@@ -301,6 +301,8 @@ body.ending #boardWrap{align-items:flex-start}
 <div class="modal" id="helpBox"><div class="box"><h2 style="text-align:left;white-space:normal" data-t="helpTitle"></h2><div data-th="helpBody"></div><button class="btn primary" id="helpClose" data-t="ok"></button></div></div>
 <div class="modal" id="delBox"><div class="box"><h2 style="white-space:normal" data-t="delQ"></h2><div class="row"><button class="btn" id="delNo" data-t="no"></button><button class="btn primary" id="delYes" data-t="yesDel"></button></div></div></div>
 
+<!-- V1.9：Firebase 登录 + 云端进度（加载失败不影响游客离线玩） -->
+<script type="module" src="firebase/cloud.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 // ================= 文本（中文 / English）=================
@@ -513,7 +515,7 @@ let qTarget=0;function inProgress(){return !lock&&CUR&&((CUR.swaps||0)>0||(CUR.s
 function askQ(n){if(n===S.n)return;if(inProgress()){qTarget=n;$('qQ').textContent=t('qQ')(n);$('qBox').classList.add('on')}else switchQ(n)}
 function switchQ(n){tStop();$('qBox').classList.remove('on');S.n=n;Object.assign(CUR,{n,pos:null,correct:0,playMs:0,swaps:0});startPuzzle(false)}
 onTap($('qYes'),()=>switchQ(qTarget));onTap($('qNo'),()=>$('qBox').classList.remove('on'));
-function persist(){if(!CUR)return;if(runFrom){tStop();tStart()}CUR.pos=pos.slice();CUR.correct=pos.filter((v,i)=>v===i).length;CUR.n=S.n;CUR.updatedAt=Date.now();dbPut(CUR)}
+function persist(){if(!CUR)return;if(runFrom){tStop();tStart()}CUR.pos=pos.slice();CUR.correct=pos.filter((v,i)=>v===i).length;CUR.n=S.n;CUR.updatedAt=Date.now();dbPut(CUR);try{window.pzCloud&&pzCloud.onSave(CUR)}catch(e){}}
 function idle(){} // V1.2：去掉 40 秒语音提醒
 function swap(c1,c2){if(c1===c2||pos[c1]===c1||pos[c2]===c2)return;const a=pos[c1],b=pos[c2];pos[c1]=b;pos[c2]=a;CUR.swaps=(CUR.swaps||0)+1;place(a);place(b);clearHint();
  const newly=[c1,c2].filter(c=>pos[c]===c);newly.forEach(c=>{els[c].classList.add('ok');petals(c)});
@@ -541,7 +543,7 @@ onTap($('hintBtn'),()=>{if(lock)return;const p=$('peek');if(!p)return;clearSel()
  th.addEventListener('pointerdown',on);th.addEventListener('pointerup',off);th.addEventListener('pointercancel',off);th.addEventListener('lostpointercapture',off);th.addEventListener('contextmenu',e=>e.preventDefault())})();
 onTap($('playBack'),()=>{tStop();persist();go(backTo)});
 function celebrate(){document.body.classList.add('ending');requestAnimationFrame(layout);tStop();persist();els.forEach(e=>e.classList.remove('ok'));
- const ms=CUR.playMs||0,n=S.n;CUR.done=CUR.done||{};CUR.bestMs=CUR.bestMs||{};CUR.done[n]=true;if(!CUR.bestMs[n]||ms<CUR.bestMs[n])CUR.bestMs[n]=Math.round(ms);persist();const key='pz_best_g'+n,prev=+localStorage.getItem(key)||0,isBest=!prev||ms<prev;if(isBest)localStorage.setItem(key,Math.round(ms));
+ const ms=CUR.playMs||0,n=S.n;CUR.done=CUR.done||{};CUR.bestMs=CUR.bestMs||{};CUR.done[n]=true;if(!CUR.bestMs[n]||ms<CUR.bestMs[n])CUR.bestMs[n]=Math.round(ms);persist();const key='pz_best_g'+n,prev=+localStorage.getItem(key)||0,isBest=!prev||ms<prev;if(isBest){localStorage.setItem(key,Math.round(ms));try{window.pzCloud&&pzCloud.onBest(n,ms)}catch(e){}}
  $('timeLine').textContent=t('timeUsed')(...fmt(ms));$('bestLine').textContent=isBest&&prev?t('newBest'):t('best')(...fmt(isBest?ms:prev));if(isBest&&prev)chime([659,784,988,1319],.3);
  const nb=$('nextLvl'),nx=LV[LV.indexOf(n)+1];if(!nx){nb.style.display='none'}else{nb.style.display='';nb.textContent=t('next')(levelName(nx)+' '+gridTxt(nx),nx)}
  window.__last={ms,best:isBest,prev};$('celebrate').classList.add('on');$('bouquetWrap').classList.remove('fade');setTimeout(()=>$('bouquetWrap').classList.add('fade'),2600);chime([523,659,784,1047],.4);
