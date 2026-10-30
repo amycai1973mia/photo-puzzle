@@ -1,6 +1,5 @@
 rules_version = '2';
 // 草稿：默认全部拒绝；登录用户只能读写自己的数据；levels 公开只读（游客也能看关卡目录）
-// 测试页使用 smoke/_smoke_test 文档：仅在测试期间开放，正式上线前删除该段
 service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} { allow read, write: if false; }
@@ -16,7 +15,18 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false; // 只在 Console 里手动维护
     }
-    // ---- 测试用（上线前删除）----
-    match /smoke/{id} { allow read, write: if id == '_smoke_test'; }
+    // V1.10 试玩链接：任何人可按链接读取；登录用户只能创建自己的，最长7天，不能改删
+    match /trials/{token} {
+      allow get: if true;
+      allow create: if request.auth != null && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.keys().hasOnly(['createdBy','createdAt','expiresAt'])
+        && request.resource.data.expiresAt is int && request.resource.data.expiresAt <= request.time.toMillis() + 7*86400000 + 600000;
+    }
+    // V1.10 反馈：任何人只能新建（不能读/改/删），星级1–5，文字≤100字
+    match /feedback/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['stars','text','n','grid','ms','lang','uid','at'])
+        && request.resource.data.stars is int && request.resource.data.stars >= 1 && request.resource.data.stars <= 5
+        && request.resource.data.text is string && request.resource.data.text.size() <= 100;
+    }
   }
 }
