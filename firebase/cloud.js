@@ -28,7 +28,7 @@ function eye(force) { const p = $('authPw'), show = typeof force === 'boolean' ?
 function clearAuthForm() { ['authEmail', 'authPw'].forEach(id => { const e = $(id); if (e) e.value = ''; });
   if ($('authPw')) eye(false); if ($('authMsg')) msg(''); }
 async function logout() { clearAuthForm(); Object.values(timers).forEach(clearTimeout); timers = {};
-  try { await signOutUser(); } catch (e) { console.warn('signout', e); }
+  try { const m = await AM(), a = await getAuthInstance(); await m.signOut(a); } catch (e) { console.warn('signout', e); }
   try { for (const k of Object.keys(sessionStorage)) if (/firebase|pz_auth/i.test(k)) sessionStorage.removeItem(k); } catch (e) {}
   user = null; try { sessionStorage.removeItem('pz_entered'); sessionStorage.removeItem('pz_entry'); } catch (e) {}
   render(); window.go && window.go('s-entry'); }
@@ -185,8 +185,15 @@ window.addEventListener('pz-done', e => { lastDone = e.detail;
 window.pzFb = { open: fbOpen };
 
 if (isFirebaseConfigured()) {
+  // V1.14：?guest=1 强制游客入口——退出这台设备上的登录、清表单和自动进入标记，直接以游客进首页（本机拼图和成绩保留）
+  const q0 = new URLSearchParams(location.search); let forcing = q0.get('guest') === '1';
+  if (q0.has('guest')) { q0.delete('guest'); history.replaceState(null, '', location.pathname + (q0.toString() ? '?' + q0 : '')); }
   ui(); redeemShare();
-  onAuthChange(u => { user = u; render(); if (u) { pullBest(); if ($('s-entry').classList.contains('on')) window.enterHome && window.enterHome(); } });
+  if (forcing) (async () => { clearAuthForm(); Object.values(timers).forEach(clearTimeout); timers = {};
+    try { const m = await AM(), a = await getAuthInstance(); await m.signOut(a); } catch (e) { console.warn('guest signout', e); }
+    try { for (const k of Object.keys(sessionStorage)) if (/firebase|pz_auth|pz_entr/i.test(k)) sessionStorage.removeItem(k); } catch (e) {}
+    user = null; forcing = false; window.__guestForced = true; sessionStorage.setItem('pz_entry', 'guest'); render(); window.enterHome && window.enterHome(); })();
+  onAuthChange(u => { if (forcing) u = null; user = u; render(); if (u) { pullBest(); if ($('s-entry').classList.contains('on')) window.enterHome && window.enterHome(); } });
 }
 
 window.PZsharePuzzle = sharePuzzle;
