@@ -44,7 +44,6 @@ function render() {
     bar.innerHTML = `<span class="who">👤 ${T('游客模式（进度存在本机）', 'Guest (saved on this device)', 'Invité (enregistré sur cet appareil)')}</span><button class="btn small" id="acctIn">🔑 ${T('登录 / 注册', 'Sign in / Register', 'Connexion / Inscription')}</button>`;
     tap($('acctIn'), open);
   }
-  trialBar(bar);
 }
 const ERR = { 'auth/invalid-email': ['邮箱格式不对', 'Invalid email', 'E-mail invalide'], 'auth/invalid-credential': ['邮箱或密码不对', 'Wrong email or password', 'E-mail ou mot de passe incorrect'],
   'auth/wrong-password': ['密码不对', 'Wrong password', 'Mot de passe incorrect'], 'auth/user-not-found': ['这个邮箱还没注册', 'No account for this email', 'Aucun compte pour cet e-mail'],
@@ -95,42 +94,51 @@ async function pullBest() {
 window.pzCloud = { onSave, onBest, get user() { return user; }, load: () => user ? loadProgress(user.uid) : Promise.resolve([]) };
 
 
-// ---- 第2条：7天免费试玩链接 ----  trials/{token}: { createdBy, createdAt, expiresAt(ms) }
-const DAY = 864e5, TK = 'pz_trial';
-const myTrial = () => { try { return JSON.parse(localStorage.getItem(TK) || 'null'); } catch (e) { return null; } };
-const daysLeft = t => t ? Math.ceil((t.expiresAt - Date.now()) / DAY) : 0;
-function trialBar(bar) {
-  const t = myTrial();
-  if (t && daysLeft(t) > 0) bar.insertAdjacentHTML('beforeend', `<span class="who" id="trialLeft">🎁 ${T('免费试玩还剩 ' + daysLeft(t) + ' 天', 'Free trial: ' + daysLeft(t) + ' days left', 'Essai gratuit : ' + daysLeft(t) + ' jours restants')}</span>`);
-  else if (t) bar.insertAdjacentHTML('beforeend', `<span class="who" id="trialLeft">🎁 ${T('免费试玩已结束，仍可当游客玩', 'Trial ended — guest play still works', 'Essai terminé — le mode invité reste disponible')}</span>`);
-  // V1.12：送朋友7天只放在通关页
+// ---- V1.13：送朋友玩这张（7天）----  shares/{token}: { img, grid, labels, createdAt, expiresAt }
+// 只上传这一张（压缩后的 JPEG dataURL），不带 uid / 名字 / 邮箱；朋友打开 ?share=<token> 只能玩这一张
+const DAY = 864e5, MAXB = 700000;
+async function compress(src) {
+  const im = await new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; });
+  if (!im) return src && src.length < MAXB ? src : null;
+  for (const [side, q] of [[1000, .8], [900, .7], [800, .6], [700, .5], [600, .45]]) {
+    const k = Math.min(1, side / Math.max(im.naturalWidth, im.naturalHeight)), c = document.createElement('canvas');
+    c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+    const u = c.toDataURL('image/jpeg', q); if (u.length < MAXB) return u;
+  }
+  return null;
 }
-// 共用：首页按钮和拼完页都走这里。没登录先提示登录（建链接需要登录）
-async function shareTrial() {
-  if (!user) { if (confirm(T('送朋友7天免费玩，需要先登录。\n现在去登录吗？', 'Please log in first to share a 7-day free trial.\nLog in now?', 'Connectez-vous pour offrir 7 jours gratuits.\nSe connecter ?'))) open(); window.__trialNeedLogin = true; return; }
-  try { const { getDb, getFs } = await import('./firebase-app.js'); const f = await getFs(), db = await getDb();
-    const token = Array.from(crypto.getRandomValues(new Uint8Array(9)), b => b.toString(36).padStart(2, '0')).join('').slice(0, 14);
-    const now = Date.now();
-    await f.setDoc(f.doc(db, 'trials', token), { createdBy: user.uid, createdAt: now, expiresAt: now + 7 * DAY });
-    const url = location.origin + location.pathname + '?trial=' + token; window.__lastTrial = url;
-    const text = T('送你7天免费玩「照片拼图」：', 'Play Photo Puzzle free for 7 days: ', 'Jouez gratuitement à Photo Puzzle pendant 7 jours : ');
+async function sharePuzzle(p) {
+  if (!p || !p.image) return;
+  if (p.sharedExp) return alert(T('这是朋友分享给你的拼图，不能再转送', 'This puzzle was shared with you and can’t be re-shared', 'Ce puzzle vous a été partagé et ne peut pas être repartagé'));
+  if (!user) { if (confirm(T('送朋友玩这张拼图，需要先登录。\n现在去登录吗？', 'Please log in first to share this puzzle.\nLog in now?', 'Connectez-vous pour partager ce puzzle.\nSe connecter ?'))) open(); return; }
+  if (!confirm(T('这张拼图照片会上传到云端，朋友打开链接只能玩这一张，看不到你的账号、名字和其他拼图。\n7天后链接失效，照片会被删除。\n继续吗？',
+    'This one photo will be uploaded so your friend can play it. They won’t see your account, name or other puzzles.\nThe link expires after 7 days and the photo is deleted.\nContinue?',
+    'Cette photo sera envoyée en ligne pour que votre ami puisse jouer. Il ne verra ni votre compte, ni votre nom, ni vos autres puzzles.\nLe lien expire après 7 jours et la photo est supprimée.\nContinuer ?'))) return;
+  try { const img = await compress(p.image); if (!img) throw new Error('too big');
+    const { getDb, getFs } = await import('./firebase-app.js'); const f = await getFs(), db = await getDb();
+    const token = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(36).padStart(2, '0')).join('').slice(0, 20);
+    const now = Date.now(), doc = { img, grid: p.n || 12, labels: String(p.label || '').slice(0, 110), createdAt: now, expiresAt: now + 7 * DAY, deleteAt: f.Timestamp.fromMillis(now + 7 * DAY) }; // deleteAt：Firestore TTL 自动删除用
+    window.__lastShareDoc = { ...doc, img: img.length, deleteAt: 'ts' };
+    await f.setDoc(f.doc(db, 'shares', token), doc);
+    const url = location.origin + location.pathname + '?share=' + token; window.__lastShare = url;
+    const text = T('送你一张照片拼图，7天内可以玩：', 'A photo puzzle for you — play it within 7 days: ', 'Un puzzle photo pour vous — à jouer sous 7 jours : ');
     if (navigator.share) { try { await navigator.share({ title: T('照片拼图', 'Photo Puzzle', 'Photo Puzzle'), text, url }); return; } catch (e) { if (e.name === 'AbortError') return; } }
     try { await navigator.clipboard.writeText(url); alert(T('链接已复制，发给朋友就行：\n', 'Link copied:\n', 'Lien copié :\n') + url); }
     catch (e) { prompt(T('长按复制这个链接：', 'Copy this link:', 'Copiez ce lien :'), url); }
-  } catch (e) { console.warn('trial', e); alert(T('生成链接失败，请稍后再试', 'Could not create link, try later', 'Impossible de créer le lien')); }
+  } catch (e) { console.warn('share', e); window.__shareErr = String(e && (e.code || e.message)); alert(T('生成链接失败，请稍后再试', 'Could not create link, try later', 'Impossible de créer le lien')); }
 }
-async function redeemTrial() {
-  const token = new URLSearchParams(location.search).get('trial'); if (!token) return;
-  history.replaceState(null, '', location.pathname); // 链接用一次就从地址栏去掉
-  if (myTrial()) return render(); // 每台设备只领一次
+async function redeemShare() {
+  const q = new URLSearchParams(location.search), token = q.get('share'); if (!q.has('trial') && !token) return;
+  history.replaceState(null, '', location.pathname); // 链接用一次就从地址栏去掉；旧 ?trial= 链接直接忽略
+  if (!token || !/^[a-z0-9]{8,40}$/.test(token)) return;
+  const gone = () => { window.__shareState = 'expired'; alert(T('分享已过期', 'This shared puzzle has expired', 'Ce puzzle partagé a expiré')); };
   try { const { getDb, getFs } = await import('./firebase-app.js'); const f = await getFs(), db = await getDb();
-    const s = await f.getDoc(f.doc(db, 'trials', token)); if (!s.exists()) return;
-    const d = s.data(); if (!(d.expiresAt > Date.now())) return;
-    // 7天从领取当天起算
-    localStorage.setItem(TK, JSON.stringify({ token, redeemedAt: Date.now(), expiresAt: Date.now() + 7 * DAY })); render();
-  } catch (e) { console.warn('redeem', e); }
+    const s = await f.getDoc(f.doc(db, 'shares', token)); if (!s.exists()) return gone();
+    const d = s.data(); if (!(d.expiresAt > Date.now()) || typeof d.img !== 'string') return gone();
+    window.__shareState = 'ok'; window.pzOpenShared && window.pzOpenShared(d, token);
+  } catch (e) { console.warn('redeem', e); gone(); }
 }
-window.pzTrial = { get: myTrial, daysLeft: () => daysLeft(myTrial()) };
+window.pzRedeemShare = redeemShare;
 
 // ---- 第3条：玩完后 1–5 星 + 100字以内反馈 → Firestore feedback，并可发邮件 ----
 const FB_EMAIL = 'minicomoffice@gmail.com';
@@ -177,8 +185,9 @@ window.addEventListener('pz-done', e => { lastDone = e.detail;
 window.pzFb = { open: fbOpen };
 
 if (isFirebaseConfigured()) {
-  ui(); redeemTrial();
+  ui(); redeemShare();
   onAuthChange(u => { user = u; render(); if (u) { pullBest(); if ($('s-entry').classList.contains('on')) window.enterHome && window.enterHome(); } });
 }
 
-window.PZshareTrial = shareTrial;
+window.PZsharePuzzle = sharePuzzle;
+window.addEventListener('pz-done', () => { const b = $('saveImg'), c = window.pzCur && window.pzCur(); if (b) b.style.display = c && c.sharedExp ? 'none' : ''; });

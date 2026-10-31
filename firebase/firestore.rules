@@ -15,11 +15,22 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false; // 只在 Console 里手动维护
     }
-    // V1.10 试玩链接：任何人可按链接读取；登录用户只能创建自己的，最长7天，不能改删
+    // V1.10 旧试玩链接：V1.13 起不再使用；只保留读取（旧链接无害），不再允许新建
     match /trials/{token} {
       allow get: if true;
-      allow create: if request.auth != null && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.keys().hasOnly(['createdBy','createdAt','expiresAt'])
+    }
+    // V1.13 分享一张拼图：只存这一张压缩照片 + 难度 + 文字，不存 uid/名字/邮箱
+    // 知道 token 才能读，过期后读不到；登录用户才能新建（不记录是谁），最长7天，不能改删
+    match /shares/{token} {
+      allow get: if resource.data.expiresAt > request.time.toMillis();
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['img','grid','labels','createdAt','expiresAt','deleteAt'])
+        && request.resource.data.deleteAt is timestamp
+        && request.resource.data.img is string && request.resource.data.img.size() < 900000
+        && request.resource.data.img.matches('^data:image/jpeg;base64,.*')
+        && request.resource.data.grid in [6,12,20,30,48]
+        && request.resource.data.labels is string && request.resource.data.labels.size() <= 110
+        && request.resource.data.createdAt is int
         && request.resource.data.expiresAt is int && request.resource.data.expiresAt <= request.time.toMillis() + 7*86400000 + 600000;
     }
     // V1.10 反馈：任何人只能新建（不能读/改/删），星级1–5，文字≤100字
