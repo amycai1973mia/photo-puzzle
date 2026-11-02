@@ -147,9 +147,10 @@ function fbUI() {
   const m = document.createElement('div'); m.className = 'modal'; m.id = 'fbBox';
   m.innerHTML = `<div class="box" style="max-width:min(94vw,460px);text-align:center"><h2 id="fbTitle" style="white-space:normal"></h2>
     <div id="fbStars" style="font-size:2.4em;display:flex;justify-content:center;gap:6px">${[1,2,3,4,5].map(i => `<button class="lnk" data-s="${i}" style="font-size:1em;background:none;border:0;cursor:pointer;min-width:52px">☆</button>`).join('')}</div>
+    <input id="fbNick" maxlength="20" style="width:100%;font:inherit;padding:8px;border:3px solid #1E1E1E;border-radius:14px;box-sizing:border-box;margin-bottom:6px">
     <textarea id="fbText" maxlength="100" rows="3" style="width:100%;font:inherit;padding:8px;border:3px solid #1E1E1E;border-radius:14px;box-sizing:border-box"></textarea>
     <div id="fbCount" class="tip"></div><div id="fbMsg" style="min-height:1.4em;font-weight:700"></div>
-    <button class="btn primary" id="fbSend" style="width:100%"></button><button class="btn small" id="fbClose"></button></div>`;
+    <button class="btn primary" id="fbSend" style="width:100%"></button><a class="lnk" id="fbMail" style="display:none;margin:6px 0"></a><button class="btn small" id="fbClose"></button></div>`;
   document.body.appendChild(m);
   m.querySelectorAll('#fbStars button').forEach(b => tap(b, () => { stars = +b.dataset.s; paintStars(); $('fbMsg').textContent = ''; }));
   $('fbText').addEventListener('input', () => { const e = $('fbText'); if (e.value.length > 100) e.value = e.value.slice(0, 100); $('fbCount').textContent = e.value.length + ' / 100'; });
@@ -160,29 +161,89 @@ function fbOpen() {
   stars = 0; paintStars(); $('fbText').value = ''; $('fbCount').textContent = '0 / 100'; $('fbMsg').textContent = '';
   $('fbTitle').textContent = T('觉得好玩吗？给我们打个分', 'Enjoyed it? Rate us', 'Ça vous a plu ? Notez-nous');
   $('fbText').placeholder = T('想说点什么？（可不填，最多100字）', 'Any comments? (optional, max 100)', 'Un commentaire ? (facultatif, 100 max)');
+  $('fbNick').value = nick(); $('fbNick').placeholder = T('昵称（可不填，显示为「游客」）', 'Nickname (optional, shows as Guest)', 'Pseudo (facultatif, « Invité »)');
+  $('fbMail').style.display = 'none'; $('fbSend').disabled = false;
   $('fbSend').textContent = T('发送反馈', 'Send feedback', 'Envoyer'); $('fbClose').textContent = T('不用了', 'No thanks', 'Non merci');
   $('fbBox').classList.add('on');
 }
+// V1.15 反馈墙：昵称只用用户自己填的或账号昵称，绝不用邮箱
+const nick = () => (localStorage.getItem('pz_nick') || (user && user.displayName) || '').slice(0, 20);
+const cleanNick = v => (v || '').replace(/@.*$/, '').trim().slice(0, 20);
+async function fbSave(rec) {
+  if (!isFirebaseConfigured()) return false;
+  try { const { getDb, getFs } = await import('./firebase-app.js'); const f = await getFs(), db = await getDb();
+    await f.addDoc(f.collection(db, 'feedback'), rec); return true; } catch (e) { console.warn('feedback', e); return false; }
+}
+const mailto = (subj, body) => `mailto:${FB_EMAIL}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
 async function sendFb() {
   if (!stars) { $('fbMsg').style.color = '#B02A00'; $('fbMsg').textContent = T('请先点星星打分', 'Tap the stars first', 'Touchez d’abord les étoiles'); return; }
-  const d = lastDone || {}, text = $('fbText').value.trim().slice(0, 100);
-  const rec = { stars, text, n: d.n || 0, grid: d.grid || '', ms: d.ms || 0, lang: LG(), uid: user ? user.uid : '', at: Date.now() };
-  window.__lastFb = rec; let saved = false;
-  if (isFirebaseConfigured()) try { const { getDb, getFs } = await import('./firebase-app.js'); const f = await getFs(), db = await getDb();
-    await f.addDoc(f.collection(db, 'feedback'), rec); saved = true; } catch (e) { console.warn('feedback', e); }
-  window.__lastFb.saved = saved;
-  // Spark 免费版没有云函数，不能后台自动发信：用 mailto 打开对方手机邮件 App，点发送即可
-  const sec = Math.round(rec.ms / 1000), body = `${'⭐'.repeat(stars)} (${stars}/5)\n${text}\n\n${T('难度', 'Level')}: ${rec.grid} (${rec.n})\n${T('用时', 'Time')}: ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}\n${T('语言', 'Language')}: ${rec.lang}`;
-  window.__lastMailto = `mailto:${FB_EMAIL}?subject=${encodeURIComponent(T('照片拼图反馈 ', 'Photo Puzzle feedback ', 'Avis Photo Puzzle ') + stars + '★')}&body=${encodeURIComponent(body)}`;
-  $('fbMsg').style.color = '#2B7A3D'; $('fbMsg').textContent = T('谢谢你的反馈！', 'Thank you!', 'Merci !');
+  const d = lastDone || {}, text = $('fbText').value.trim().slice(0, 100), dn = cleanNick($('fbNick').value);
+  if (dn) localStorage.setItem('pz_nick', dn);
+  const rec = { kind: 'rating', stars, text, displayName: dn, n: d.n || 0, grid: String(d.grid || ''), ms: d.ms || 0, lang: LG(), createdAt: Date.now() };
+  window.__lastFb = rec; $('fbSend').disabled = true;
+  const saved = await fbSave(rec); window.__lastFb.saved = saved;
+  // Spark 免费版没有云函数，不能后台自动发信：给一个「也发邮件」按钮，打开手机邮件 App 发到 office 邮箱
+  const sec = Math.round(rec.ms / 1000), body = `${'⭐'.repeat(stars)} (${stars}/5)\n${text}\n\n${T('昵称', 'Name')}: ${dn || T('游客', 'Guest', 'Invité')}\n${T('难度', 'Level')}: ${rec.grid} (${rec.n})\n${T('用时', 'Time')}: ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}\n${T('语言', 'Language')}: ${rec.lang}`;
+  window.__lastMailto = mailto(T('照片拼图反馈 ', 'Photo Puzzle feedback ', 'Avis Photo Puzzle ') + stars + '★', body);
+  $('fbMsg').style.color = '#2B7A3D'; $('fbMsg').textContent = saved ? T('谢谢！已贴到「反馈/讨论」', 'Thanks! Posted to Feedback', 'Merci ! Publié dans Avis') : T('谢谢你的反馈！', 'Thank you!', 'Merci !');
+  const a = $('fbMail'); a.href = window.__lastMailto; a.style.display = 'block'; a.textContent = '📧 ' + T('也用邮件发给我们', 'Also email it to us', 'Nous l’envoyer aussi par e-mail');
   if (!saved && !window.__noMailto) location.href = window.__lastMailto;
-  setTimeout(() => $('fbBox').classList.remove('on'), 1500);
 }
-fbUI();
+// ---- V1.15 反馈/讨论墙 ----
+const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+function wallUI() {
+  const s = document.createElement('section'); s.className = 'screen'; s.id = 's-wall';
+  s.innerHTML = `<div class="top"><button class="btn small" id="wallBack"></button><h2 id="wallTitle"></h2><button class="btn small" id="wallRe">🔄</button></div>
+  <div style="width:min(94vw,560px);margin:0 auto">
+    <div class="setItem" style="flex-direction:column;align-items:stretch;gap:6px;background:#fff;border:3px solid #1E1E1E;border-radius:16px;padding:10px">
+      <b id="askH"></b><input id="askNick" maxlength="20" style="font:inherit;padding:8px;border:2px solid #1E1E1E;border-radius:12px">
+      <textarea id="askText" maxlength="200" rows="3" style="font:inherit;padding:8px;border:2px solid #1E1E1E;border-radius:12px"></textarea>
+      <button class="btn primary" id="askSend"></button><div id="askMsg" style="font-weight:700;min-height:1.2em"></div></div>
+    <div id="wallList" style="display:flex;flex-direction:column;gap:10px;margin:12px 0 40px"></div></div>`;
+  document.body.appendChild(s);
+  tap($('wallBack'), () => window.go('s-settings')); tap($('wallRe'), loadWall); tap($('askSend'), sendAsk);
+  const st = document.querySelector('#s-settings .setList'); if (st) { const it = document.createElement('div'); it.className = 'setItem';
+    it.innerHTML = '<button class="btn small" id="wallBtn" style="width:100%"></button>'; st.insertBefore(it, $('setAcct')); tap($('wallBtn'), openWall); }
+  wallText(); window.addEventListener('pz-lang', () => setTimeout(wallText, 0));
+}
+function wallText() {
+  if ($('wallBtn')) $('wallBtn').textContent = '💬 ' + T('反馈 / 讨论', 'Feedback / Discussion', 'Avis / Discussion');
+  $('wallBack').textContent = T('返回', 'Back', 'Retour'); $('wallTitle').textContent = T('反馈 / 讨论', 'Feedback', 'Avis');
+  $('askH').textContent = T('有问题或建议？在这里留言', 'Question or idea? Leave a message', 'Une question ? Laissez un message');
+  $('askNick').placeholder = T('昵称（可不填，显示为「游客」）', 'Nickname (optional, shows as Guest)', 'Pseudo (facultatif, « Invité »)');
+  $('askText').placeholder = T('写下你的问题（最多200字，大家都能看到）', 'Your question (max 200, public)', 'Votre question (200 max, publique)');
+  $('askSend').textContent = T('发布留言', 'Post', 'Publier');
+}
+function openWall() { $('askNick').value = nick(); $('askMsg').textContent = ''; window.go('s-wall'); loadWall(); }
+async function sendAsk() {
+  const text = $('askText').value.trim().slice(0, 200), dn = cleanNick($('askNick').value), m = $('askMsg');
+  if (text.length < 2) { m.style.color = '#B02A00'; m.textContent = T('请先写点内容', 'Please write something', 'Écrivez quelque chose'); return; }
+  if (dn) localStorage.setItem('pz_nick', dn);
+  const rec = { kind: 'ask', stars: 0, text, displayName: dn, n: 0, grid: '', ms: 0, lang: LG(), createdAt: Date.now() };
+  window.__lastAsk = rec; const ok = await fbSave(rec); rec.saved = ok;
+  window.__lastAskMailto = mailto(T('照片拼图留言', 'Photo Puzzle question', 'Question Photo Puzzle'), `${text}\n\n${dn || T('游客', 'Guest', 'Invité')}`);
+  if (ok) { $('askText').value = ''; m.style.color = '#2B7A3D'; m.textContent = T('已发布，回复会显示在下面', 'Posted! Replies appear below', 'Publié ! Les réponses apparaîtront ici'); loadWall(); }
+  else { m.style.color = '#B02A00'; m.textContent = T('没连上网，改用邮件发送', 'Offline — opening email', 'Hors ligne — e-mail'); if (!window.__noMailto) location.href = window.__lastAskMailto; }
+}
+const fmtD = t => { try { return new Date(t).toLocaleDateString(LG() === 'zh' ? 'zh-CN' : LG()); } catch (e) { return ''; } };
+async function loadWall() {
+  const L = $('wallList'); L.innerHTML = `<div class="tip">${T('加载中…', 'Loading…', 'Chargement…')}</div>`;
+  let rows = window.__wallMock || null;
+  if (!rows) try { const { getDb, getFs } = await import('./firebase-app.js'); const f = await getFs(), db = await getDb();
+    const qs = await f.getDocs(f.query(f.collection(db, 'feedback'), f.where('kind', 'in', ['rating', 'ask']), f.limit(200)));
+    rows = qs.docs.map(x => x.data()); } catch (e) { console.warn('wall', e); L.innerHTML = `<div class="tip">${T('暂时连不上，请稍后再试', 'Can’t load right now', 'Chargement impossible')}</div>`; return; }
+  rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); window.__wallRows = rows.length;
+  if (!rows.length) { L.innerHTML = `<div class="tip">${T('还没有留言，来做第一个吧', 'No messages yet', 'Aucun message')}</div>`; return; }
+  L.innerHTML = rows.map(r => `<div class="wallItem" style="background:#fff;border:3px solid #1E1E1E;border-radius:16px;padding:10px 12px">
+    <div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(r.displayName || T('游客', 'Guest', 'Invité'))}</b><span class="tip">${r.kind === 'ask' ? '❓ ' + T('提问', 'Question', 'Question') : '⭐'.repeat(r.stars || 0)} · ${fmtD(r.createdAt)}</span></div>
+    ${r.text ? `<div style="margin-top:4px;white-space:pre-wrap">${esc(r.text)}</div>` : ''}
+    ${r.reply ? `<div class="wallReply" style="margin-top:8px;padding:8px;background:#FFF3C4;border-radius:12px"><b>💬 ${T('作者回复', 'Reply from the maker', 'Réponse')}：</b><span style="white-space:pre-wrap">${esc(r.reply)}</span></div>` : ''}</div>`).join('');
+}
+fbUI(); wallUI();
 window.addEventListener('pz-done', e => { lastDone = e.detail;
   const g = document.getElementById('endLinks'); if (g && !$('fbOpen')) { const b = document.createElement('button'); b.className = 'lnk'; b.id = 'fbOpen'; g.prepend(b); tap(b, fbOpen); }
   if ($('fbOpen')) $('fbOpen').textContent = '⭐ ' + T('给个评价', 'Rate this game', 'Donner un avis'); });
-window.pzFb = { open: fbOpen };
+window.pzFb = { open: fbOpen, wall: openWall };
 
 if (isFirebaseConfigured()) {
   // V1.14：?guest=1 强制游客入口——退出这台设备上的登录、清表单和自动进入标记，直接以游客进首页（本机拼图和成绩保留）

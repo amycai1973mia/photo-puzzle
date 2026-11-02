@@ -33,11 +33,20 @@ service cloud.firestore {
         && request.resource.data.createdAt is int
         && request.resource.data.expiresAt is int && request.resource.data.expiresAt <= request.time.toMillis() + 7*86400000 + 600000;
     }
-    // V1.10 反馈：任何人只能新建（不能读/改/删），星级1–5，文字≤100字
+    // V1.15 反馈墙：公开可读（只有昵称/星级/文字/回复，没有邮箱和 uid）；任何人可新建评价或提问；
+    // 回复(reply/replyAt)只能由 Amy 在 Firebase Console 里添加（Console 不受规则限制），App 里不能改删。
+    // 旧 V1.10 记录没有 kind 字段（含 uid），不公开。
     match /feedback/{id} {
-      allow create: if request.resource.data.keys().hasOnly(['stars','text','n','grid','ms','lang','uid','at'])
-        && request.resource.data.stars is int && request.resource.data.stars >= 1 && request.resource.data.stars <= 5
-        && request.resource.data.text is string && request.resource.data.text.size() <= 100;
+      allow read: if resource.data.kind in ['rating', 'ask'];
+      allow create: if request.resource.data.keys().hasOnly(['stars','text','displayName','kind','n','grid','ms','lang','createdAt'])
+        && request.resource.data.kind in ['rating', 'ask']
+        && request.resource.data.stars is int && request.resource.data.stars >= 0 && request.resource.data.stars <= 5
+        && (request.resource.data.kind == 'ask' || request.resource.data.stars >= 1)
+        && request.resource.data.text is string && request.resource.data.text.size() <= 200
+        && (request.resource.data.kind == 'rating' || request.resource.data.text.size() >= 2)
+        && request.resource.data.displayName is string && request.resource.data.displayName.size() <= 20
+        && request.resource.data.createdAt is int;
+      allow update, delete: if false;
     }
   }
 }
