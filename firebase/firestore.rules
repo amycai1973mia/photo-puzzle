@@ -1,29 +1,54 @@
 rules_version = '2';
-// 草稿：默认全部拒绝；登录用户只能读写自己的数据；levels 公开只读（游客也能看关卡目录）
+// Family Photo Puzzle — Admin V1 草稿规则（本机已更新；线上需发布时 deploy）
+// 管理员邮箱写死在 isAdmin()；与 firebase-config.js 的 ADMIN_EMAILS 保持同步。
+// Assumed models:
+//   users/{uid}: { uid, email, displayName, locale, createdAt, updatedAt, best_g*, lastLoginAt? }
+//   progress/{userId_puzzleId}: { userId, puzzleId, n, pos, correct, playMs, done, bestMs, updatedAt, ... }
+//   feedback/{id}: { kind: rating|ask|hidden_rating|hidden_ask, stars, text, displayName, n, grid, ms, lang, createdAt,
+//                    reply?, replyAt?, hidden?, hiddenAt? }  — 无 uid/邮箱
+//   shares/{token}: { img, grid, labels, createdAt, expiresAt, deleteAt }
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    // 管理员：仅 Amy 的登录邮箱。新增管理员时改这里 + firebase-config.js ADMIN_EMAILS。
+    // 注：邮箱密码账号未必 email_verified；以邮箱白名单为准（不开放自助升权）。
+    function isAdmin() {
+      return isSignedIn()
+        && request.auth.token.email is string
+        && request.auth.token.email in ['amycai1973@gmail.com'];
+    }
+    function feedbackPublicKind() {
+      return resource.data.kind in ['rating', 'ask'];
+    }
+    function feedbackModKind() {
+      return request.resource.data.kind in ['rating', 'ask', 'hidden_rating', 'hidden_ask'];
+    }
+
     match /{document=**} { allow read, write: if false; }
 
     match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+      // Admin V1 总览：数注册用户 / 近7日有云端活动
+      allow read: if isAdmin();
     }
     match /progress/{docId} {
-      allow read, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create, update: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create, update: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAdmin();
     }
     match /levels/{id} {
       allow read: if true;
-      allow write: if false; // 只在 Console 里手动维护
+      allow write: if false;
     }
-    // V1.10 旧试玩链接：V1.13 起不再使用；只保留读取（旧链接无害），不再允许新建
     match /trials/{token} {
       allow get: if true;
     }
-    // V1.13 分享一张拼图：只存这一张压缩照片 + 难度 + 文字，不存 uid/名字/邮箱
-    // 知道 token 才能读，过期后读不到；登录用户才能新建（不记录是谁），最长7天，不能改删
     match /shares/{token} {
-      allow get: if resource.data.expiresAt > request.time.toMillis();
-      allow create: if request.auth != null
+      allow get: if resource.data.expiresAt > request.time.toMillis() || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isSignedIn()
         && request.resource.data.keys().hasOnly(['img','grid','labels','createdAt','expiresAt','deleteAt'])
         && request.resource.data.deleteAt is timestamp
         && request.resource.data.img is string && request.resource.data.img.size() < 900000
@@ -33,11 +58,10 @@ service cloud.firestore {
         && request.resource.data.createdAt is int
         && request.resource.data.expiresAt is int && request.resource.data.expiresAt <= request.time.toMillis() + 7*86400000 + 600000;
     }
-    // V1.15 反馈墙：公开可读（只有昵称/星级/文字/回复，没有邮箱和 uid）；任何人可新建评价或提问；
-    // 回复(reply/replyAt)只能由 Amy 在 Firebase Console 里添加（Console 不受规则限制），App 里不能改删。
-    // 旧 V1.10 记录没有 kind 字段（含 uid），不公开。
+    // 反馈墙：公开只读 rating|ask；软隐藏改 kind→hidden_*（公开查询自然看不到）
+    // 回复/隐藏/删除：仅管理员（或 Firebase Console）
     match /feedback/{id} {
-      allow read: if resource.data.kind in ['rating', 'ask'];
+      allow read: if isAdmin() || feedbackPublicKind();
       allow create: if request.resource.data.keys().hasOnly(['stars','text','displayName','kind','n','grid','ms','lang','createdAt'])
         && request.resource.data.kind in ['rating', 'ask']
         && request.resource.data.stars is int && request.resource.data.stars >= 0 && request.resource.data.stars <= 5
@@ -46,7 +70,15 @@ service cloud.firestore {
         && (request.resource.data.kind == 'rating' || request.resource.data.text.size() >= 2)
         && request.resource.data.displayName is string && request.resource.data.displayName.size() <= 20
         && request.resource.data.createdAt is int;
-      allow update, delete: if false;
+      allow update: if isAdmin()
+        && feedbackModKind()
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['reply', 'replyAt', 'kind', 'hidden', 'hiddenAt'])
+        && (!('reply' in request.resource.data) || (request.resource.data.reply is string && request.resource.data.reply.size() <= 500))
+        && (!('replyAt' in request.resource.data) || request.resource.data.replyAt is int)
+        && (!('hidden' in request.resource.data) || request.resource.data.hidden is bool)
+        && (!('hiddenAt' in request.resource.data) || request.resource.data.hiddenAt is int);
+      allow delete: if isAdmin();
     }
   }
 }

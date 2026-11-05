@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>拼图后台 · Admin V1</title>
+<link rel="icon" href="icon.svg">
+<style>
+:root{--ink:#1E1E1E;--bg:#F6EFE6;--card:#fff;--accent:#E85D04;--ok:#2B7A3D;--bad:#B02A00;--muted:#7A6A58;--line:#D8C7B3;--soft:#FFF3C4}
+*{box-sizing:border-box}body{margin:0;font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:3px solid var(--ink);background:#fff}
+header h1{margin:0;font-size:1.15rem}header .who{font-size:.9rem;color:var(--muted)}
+main{max-width:960px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:3px solid var(--ink);border-radius:16px;padding:14px 16px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.stat{background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px}.stat b{display:block;font-size:1.6rem;line-height:1.1}.stat span{color:var(--muted);font-size:.85rem}
+.tip{color:var(--muted);font-size:.88rem}.note{background:var(--soft);border-radius:12px;padding:10px;margin-top:10px;font-size:.9rem}
+.btn{appearance:none;border:3px solid var(--ink);border-radius:14px;background:#fff;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--accent);color:#fff}.btn.danger{background:#fff;color:var(--bad);border-color:var(--bad)}.btn.small{padding:6px 10px;font-size:.9rem;border-width:2px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+input,textarea,select{width:100%;font:inherit;padding:10px;border:2px solid var(--ink);border-radius:12px;background:#fff}
+label{display:block;font-weight:700;margin:8px 0 4px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.hidden{display:none!important}
+.msg{min-height:1.3em;font-weight:700;margin-top:6px}.msg.ok{color:var(--ok)}.msg.err{color:var(--bad)}
+.item{border:2px solid var(--line);border-radius:14px;padding:12px;margin:10px 0;background:#fff}
+.item.hid{opacity:.72;background:#f5f0ea}
+.item .meta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;color:var(--muted);font-size:.88rem}
+.item .txt{margin:6px 0;white-space:pre-wrap}.reply{margin-top:8px;padding:8px;background:var(--soft);border-radius:10px}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;background:#eee;font-size:.8rem;font-weight:700}
+.badge.warn{background:#ffe0c2}.badge.ask{background:#dceeff}.badge.hide{background:#e8e0d8}
+.tabs{display:flex;gap:8px;margin-bottom:12px}.tabs .btn{flex:1}
+.gate{max-width:420px;margin:40px auto;padding:20px}
+.eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;font-size:1.2rem;cursor:pointer}
+.pwwrap{position:relative}
+footer{padding:20px 16px 40px;text-align:center;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🧩 家庭照片拼图 · 后台</h1>
+    <div class="tip">Admin V1 · 仅管理员 · 不统计游客手机数</div>
+  </div>
+  <div id="hdrRight" class="who"></div>
+</header>
+
+<main>
+  <section id="gate" class="card gate">
+    <h2 style="margin-top:0">管理员登录</h2>
+    <p class="tip">用管理员 Google 账号登录。公众首页不挂此链接。</p>
+    <button class="btn primary" id="btnG" style="width:100%;margin:6px 0 10px">用 Google 继续</button>
+    <details><summary class="tip">其他方式（邮箱密码，仅旧账号测试）</summary>
+    <label for="email">邮箱</label>
+    <input id="email" type="email" autocomplete="username" placeholder="admin@example.com">
+    <label for="pw">密码</label>
+    <div class="pwwrap">
+      <input id="pw" type="password" autocomplete="current-password">
+      <button type="button" class="eye" id="eye" aria-label="显示密码">👁️</button>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="btnIn" style="flex:1">邮箱登录</button>
+    </div>
+    </details>
+    <div class="msg" id="gateMsg"></div>
+    <p class="tip" style="margin-top:12px">白名单见页面底部说明。非管理员登录会显示「无权限」。</p>
+  </section>
+
+  <section id="denied" class="card hidden">
+    <h2 style="margin-top:0;color:var(--bad)">无权限</h2>
+    <p>当前账号不在管理员白名单里，不能进入后台。</p>
+    <p class="tip" id="deniedWho"></p>
+    <button class="btn" id="btnDeniedOut">退出登录</button>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="tabs">
+      <button class="btn primary" id="tabOverview" data-tab="overview">总览</button>
+      <button class="btn" id="tabFeedback" data-tab="feedback">评价管理</button>
+    </div>
+
+    <div id="panelOverview">
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <h2 style="margin:0">数据总览</h2>
+          <button class="btn small" id="btnRefresh">🔄 刷新</button>
+        </div>
+        <div class="grid" id="stats" style="margin-top:12px"></div>
+        <div class="note" id="statsNote"></div>
+      </div>
+    </div>
+
+    <div id="panelFeedback" class="hidden">
+      <div class="card">
+        <h2 style="margin-top:0">评价 / 留言</h2>
+        <div class="row">
+          <select id="starFilter" style="flex:1;min-width:120px">
+            <option value="all">全部星级</option>
+            <option value="5">⭐⭐⭐⭐⭐</option>
+            <option value="4">⭐⭐⭐⭐</option>
+            <option value="3">⭐⭐⭐</option>
+            <option value="2">⭐⭐</option>
+            <option value="1">⭐</option>
+            <option value="0">仅提问（无星）</option>
+            <option value="hidden">仅已隐藏</option>
+          </select>
+          <input id="q" placeholder="搜索昵称或内容" style="flex:2;min-width:160px">
+          <button class="btn small" id="btnFbLoad">刷新列表</button>
+        </div>
+        <div class="tip" id="fbCount"></div>
+        <div id="fbList"></div>
+        <div class="msg" id="fbMsg"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div>管理员白名单：<code id="allowList"></code></div>
+  <div class="tip">新增管理员：改 <code>firebase/firebase-config.js</code> 的 ADMIN_EMAILS，并同步 <code>firestore.rules</code> 的 isAdmin()，再部署规则。</div>
+  <div class="tip">游客拼图只在本机，后台无法也不会统计游客手机数量。完成局数暂无可靠云端时间戳 → 显示 N/A。</div>
+  <div class="tip">本页未发布前仅本机可用；线上管理需部署新规则后才可回复/隐藏。</div>
+</footer>
+
+<dialog id="dlgReply">
+  <form method="dialog" id="replyForm" style="padding:8px;min-width:min(90vw,420px)">
+    <h3 style="margin-top:0">回复评价</h3>
+    <p class="tip" id="replyTarget"></p>
+    <textarea id="replyText" rows="4" maxlength="500" placeholder="作者回复（最多500字）"></textarea>
+    <div class="row" style="margin-top:10px;justify-content:flex-end">
+      <button class="btn small" value="cancel">取消</button>
+      <button class="btn primary small" id="replySave" value="default">保存回复</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module">
+import { ADMIN_EMAILS as AE } from './firebase/firebase-config.js';
+import { isFirebaseConfigured as cfgOk, getAuthInstance, getDb, getFs } from './firebase/firebase-app.js';
+
+const $ = id => document.getElementById(id);
+const ADMINS = (AE || ['amycai1973@gmail.com']).map(e => String(e).toLowerCase());
+$('allowList').textContent = ADMINS.join(', ');
+
+const DAY = 86400000;
+const now = () => Date.now();
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = t => { try { return new Date(t).toLocaleString('zh-CN', { hour12: false }); } catch { return ''; } };
+const isHidden = r => !!(r && (r.hidden || String(r.kind || '').startsWith('hidden_')));
+const baseKind = r => { const k = String(r.kind || 'rating'); return k.startsWith('hidden_') ? k.slice(7) : k; };
+const isAdminUser = u => !!(u && u.email && ADMINS.includes(String(u.email).toLowerCase()));
+
+let authUser = null;
+let allFeedback = [];
+let replyId = null;
+
+const preview = new URLSearchParams(location.search).get('uiPreview') === '1'
+  && /^(localhost|127\.0\.0\.1)$/i.test(location.hostname);
+
+$('eye').onclick = () => {
+  const p = $('pw'); const show = p.type === 'password';
+  p.type = show ? 'text' : 'password'; $('eye').textContent = show ? '🙈' : '👁️';
+};
+
+function show(view) {
+  ['gate','denied','app'].forEach(id => $(id).classList.toggle('hidden', id !== view));
+}
+function setTab(name) {
+  $('panelOverview').classList.toggle('hidden', name !== 'overview');
+  $('panelFeedback').classList.toggle('hidden', name !== 'feedback');
+  $('tabOverview').classList.toggle('primary', name === 'overview');
+  $('tabFeedback').classList.toggle('primary', name === 'feedback');
+  if (name === 'feedback') renderFeedback();
+}
+
+$('tabOverview').onclick = () => setTab('overview');
+$('tabFeedback').onclick = () => setTab('feedback');
+$('btnRefresh').onclick = () => loadOverview();
+$('btnFbLoad').onclick = () => loadFeedback();
+$('starFilter').onchange = () => renderFeedback();
+$('q').oninput = () => renderFeedback();
+
+async function authMods() {
+  return import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+}
+
+async function signIn() {
+  const email = $('email').value.trim(), pw = $('pw').value;
+  $('gateMsg').className = 'msg';
+  if (!email || !pw) { $('gateMsg').className = 'msg err'; $('gateMsg').textContent = '请填写邮箱和密码'; return; }
+  try {
+    const m = await authMods(), a = await getAuthInstance();
+    await m.signInWithEmailAndPassword(a, email, pw);
+  } catch (e) {
+    $('gateMsg').className = 'msg err';
+    $('gateMsg').textContent = ({
+      'auth/invalid-credential': '邮箱或密码不对',
+      'auth/wrong-password': '密码不对',
+      'auth/user-not-found': '这个邮箱还没注册',
+      'auth/too-many-requests': '试太多次了，请稍后再试',
+      'auth/network-request-failed': '网络不通'
+    })[e.code] || ('登录失败：' + (e.code || e.message));
+  }
+}
+
+async function signOut() {
+  try { const m = await authMods(); await m.signOut(await getAuthInstance()); } catch {}
+}
+
+$('btnIn').onclick = signIn;
+$('btnG').onclick = async () => { $('gateMsg').className = 'msg';
+  try { const m = await authMods(), a = await getAuthInstance(); const pr = new m.GoogleAuthProvider(); pr.setCustomParameters({ prompt: 'select_account' });
+    try { await m.signInWithPopup(a, pr); } catch (e) { if (/popup-blocked|operation-not-supported/.test(e.code || '')) return m.signInWithRedirect(a, pr); throw e; }
+  } catch (e) { $('gateMsg').className = 'msg err'; $('gateMsg').textContent = ({ 'auth/operation-not-allowed': 'Google 登录还没在 Firebase 开启', 'auth/unauthorized-domain': '这个网址还没加进 Firebase 授权网域', 'auth/popup-closed-by-user': '登录窗口被关掉了' })[e.code] || ('登录失败：' + (e.code || e.message)); } };
+(async () => { try { const m = await authMods(); await m.getRedirectResult(await getAuthInstance()); } catch {} })();
+$('btnDeniedOut').onclick = signOut;
+$('pw').addEventListener('keydown', e => { if (e.key === 'Enter') signIn(); });
+
+function hdr(u) {
+  const box = $('hdrRight');
+  if (!u) { box.innerHTML = ''; return; }
+  box.innerHTML = `<span>已登录：${esc(u.email || '')}</span> <button class="btn small" id="btnOut">退出</button>`;
+  $('btnOut').onclick = signOut;
+}
+
+function tsMillis(v) {
+  if (v == null) return 0;
+  if (typeof v === 'number') return v;
+  if (typeof v.toMillis === 'function') return v.toMillis();
+  if (v.seconds) return v.seconds * 1000;
+  return 0;
+}
+
+function statCard(label, value, tip) {
+  return `<div class="stat"><b>${esc(value)}</b><span>${esc(label)}</span>${tip ? `<div class="tip">${esc(tip)}</div>` : ''}</div>`;
+}
+
+async function loadOverview() {
+  const box = $('stats'); const note = $('statsNote');
+  box.innerHTML = '<div class="tip">加载中…</div>';
+  note.textContent = '';
+  if (preview && !authUser) {
+    box.innerHTML = [
+      statCard('注册用户（约）', '12', 'users 文档数'),
+      statCard('近7日活跃（约）', '5', 'users.updatedAt'),
+      statCard('反馈总数', '28', ''),
+      statCard('近7日新反馈', '6', ''),
+      statCard('有效试玩分享', '3', '未过期 shares'),
+      statCard('今日/7日完成局', 'N/A', '云端无完成时间戳')
+    ].join('');
+    note.innerHTML = '⚠️ 这是本机 <code>?uiPreview=1</code> 演示数字，不是线上真实数据。游客不计入。';
+    return;
+  }
+  try {
+    const f = await getFs(), db = await getDb();
+    const [usersSnap, fbSnap, sharesSnap] = await Promise.all([
+      f.getDocs(f.collection(db, 'users')),
+      f.getDocs(f.collection(db, 'feedback')),
+      f.getDocs(f.collection(db, 'shares')).catch(() => ({ docs: [], empty: true, size: 0 }))
+    ]);
+    const t0 = now(), week = t0 - 7 * DAY;
+    const users = usersSnap.docs.map(d => d.data());
+    const active7 = users.filter(u => {
+      const t = Math.max(tsMillis(u.updatedAt), tsMillis(u.lastLoginAt), tsMillis(u.createdAt));
+      return t >= week;
+    }).length;
+    const fbs = fbSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const publicish = fbs.filter(r => !isHidden(r));
+    const new7 = fbs.filter(r => (r.createdAt || 0) >= week).length;
+    const shares = sharesSnap.docs.map(d => d.data());
+    const activeShares = shares.filter(s => (s.expiresAt || 0) > t0).length;
+
+    box.innerHTML = [
+      statCard('注册用户（约）', String(users.length), '≈ users/{uid} 文档，非 Auth 全量'),
+      statCard('近7日活跃（约）', String(active7), '有 updatedAt/登录同步的用户'),
+      statCard('反馈总数', String(fbs.length), `公开可见约 ${publicish.length}`),
+      statCard('近7日新反馈', String(new7), '含已隐藏'),
+      statCard('有效试玩分享', String(activeShares), `shares 共 ${shares.length}`),
+      statCard('今日/7日完成局', 'N/A', 'progress 无完成时间戳')
+    ].join('');
+    note.innerHTML = '说明：注册用户数来自 Firestore <code>users</code>（登录过并写过档案的账号），可能略少于 Auth 用户总数。'
+      + ' 活跃≈近7日云端有同步。游客只存本机，无法统计。'
+      + ' 若刷新报权限错误：需先部署本机新版 <code>firestore.rules</code>（发布时一并部署）。';
+  } catch (e) {
+    console.warn(e);
+    box.innerHTML = `<div class="msg err">加载失败：${esc(e.code || e.message)}。若是 permission-denied，请在发布时部署 Admin V1 规则。</div>`;
+  }
+}
+
+async function loadFeedback() {
+  $('fbMsg').textContent = '';
+  $('fbList').innerHTML = '<div class="tip">加载中…</div>';
+  if (preview && !authUser) {
+    allFeedback = [
+      { id: 'demo1', kind: 'rating', stars: 5, displayName: '小明', text: '爷爷很喜欢！', createdAt: now() - 3600000, reply: '谢谢支持！', replyAt: now() - 1800000 },
+      { id: 'demo2', kind: 'ask', stars: 0, displayName: '游客', text: '能不能加凹凸拼图？', createdAt: now() - 86400000 },
+      { id: 'demo3', kind: 'hidden_rating', stars: 1, displayName: 'spam', text: '广告广告', createdAt: now() - 7200000, hidden: true, hiddenAt: now() - 3600000 }
+    ];
+    renderFeedback();
+    return;
+  }
+  try {
+    const f = await getFs(), db = await getDb();
+    const snap = await f.getDocs(f.collection(db, 'feedback'));
+    allFeedback = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    allFeedback.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    renderFeedback();
+  } catch (e) {
+    $('fbList').innerHTML = '';
+    $('fbMsg').className = 'msg err';
+    $('fbMsg').textContent = '列表加载失败：' + (e.code || e.message) + '（未部署新规则时管理员也读不全）';
+  }
+}
+
+function filtered() {
+  const star = $('starFilter').value;
+  const q = $('q').value.trim().toLowerCase();
+  return allFeedback.filter(r => {
+    if (star === 'hidden') { if (!isHidden(r)) return false; }
+    else if (star !== 'all') {
+      if (isHidden(r)) return false;
+      if (String(r.stars ?? '') !== star) return false;
+    }
+    if (!q) return true;
+    const hay = `${r.displayName || ''} ${r.text || ''} ${r.reply || ''}`.toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+function renderFeedback() {
+  const rows = filtered();
+  $('fbCount').textContent = `显示 ${rows.length} / 共 ${allFeedback.length} 条`;
+  if (!rows.length) { $('fbList').innerHTML = '<div class="tip">没有匹配的评价</div>'; return; }
+  $('fbList').innerHTML = rows.map(r => {
+    const hid = isHidden(r);
+    const kind = baseKind(r);
+    const star = kind === 'ask' ? '❓ 提问' : '⭐'.repeat(r.stars || 0);
+    const badges = [
+      kind === 'ask' ? '<span class="badge ask">提问</span>' : '<span class="badge">评价</span>',
+      hid ? '<span class="badge hide">已隐藏</span>' : ''
+    ].join(' ');
+    return `<div class="item ${hid ? 'hid' : ''}" data-id="${esc(r.id)}">
+      <div class="meta"><span><b>${esc(r.displayName || '游客')}</b> ${badges}</span><span>${star} · ${esc(fmt(r.createdAt))}</span></div>
+      <div class="txt">${r.text ? esc(r.text) : '<span class="tip">（无文字）</span>'}</div>
+      ${r.reply ? `<div class="reply"><b>作者回复：</b><span style="white-space:pre-wrap">${esc(r.reply)}</span><div class="tip">${esc(fmt(r.replyAt))}</div></div>` : ''}
+      <div class="row">
+        <button class="btn small" data-act="reply">💬 回复</button>
+        ${hid
+          ? '<button class="btn small" data-act="restore">↩ 恢复显示</button>'
+          : '<button class="btn small" data-act="hide">🙈 隐藏</button>'}
+        <button class="btn small danger" data-act="del">🗑 彻底删除</button>
+      </div>
+    </div>`;
+  }).join('');
+  $('fbList').querySelectorAll('[data-act]').forEach(btn => {
+    btn.onclick = () => onAct(btn.closest('.item').dataset.id, btn.dataset.act);
+  });
+}
+
+async function onAct(id, act) {
+  const row = allFeedback.find(r => r.id === id);
+  if (!row) return;
+  if (preview && !authUser) {
+    if (act === 'reply') { replyId = id; $('replyTarget').textContent = (row.displayName || '游客') + '：' + (row.text || ''); $('replyText').value = row.reply || ''; $('dlgReply').showModal(); return; }
+    if (act === 'hide') { row.hidden = true; row.kind = 'hidden_' + baseKind(row); row.hiddenAt = now(); }
+    if (act === 'restore') { row.hidden = false; row.kind = baseKind(row); delete row.hiddenAt; }
+    if (act === 'del') { if (!confirm('演示：从列表移除？')) return; allFeedback = allFeedback.filter(r => r.id !== id); }
+    renderFeedback(); $('fbMsg').className = 'msg ok'; $('fbMsg').textContent = '演示模式已更新（未写库）'; return;
+  }
+  if (act === 'reply') {
+    replyId = id; $('replyTarget').textContent = (row.displayName || '游客') + '：' + (row.text || '');
+    $('replyText').value = row.reply || ''; $('dlgReply').showModal(); return;
+  }
+  try {
+    const f = await getFs(), db = await getDb();
+    const ref = f.doc(db, 'feedback', id);
+    if (act === 'hide') {
+      const k = baseKind(row);
+      await f.updateDoc(ref, { kind: 'hidden_' + k, hidden: true, hiddenAt: now() });
+      Object.assign(row, { kind: 'hidden_' + k, hidden: true, hiddenAt: now() });
+      $('fbMsg').className = 'msg ok'; $('fbMsg').textContent = '已隐藏（公开墙不再显示）';
+    } else if (act === 'restore') {
+      const k = baseKind(row);
+      await f.updateDoc(ref, { kind: k, hidden: false, hiddenAt: 0 });
+      Object.assign(row, { kind: k, hidden: false, hiddenAt: 0 });
+      $('fbMsg').className = 'msg ok'; $('fbMsg').textContent = '已恢复到公开墙';
+    } else if (act === 'del') {
+      if (!confirm('彻底删除这条评价？不可恢复。')) return;
+      await f.deleteDoc(ref);
+      allFeedback = allFeedback.filter(r => r.id !== id);
+      $('fbMsg').className = 'msg ok'; $('fbMsg').textContent = '已彻底删除';
+    }
+    renderFeedback();
+  } catch (e) {
+    $('fbMsg').className = 'msg err';
+    $('fbMsg').textContent = '操作失败：' + (e.code || e.message) + '（需已部署 Admin V1 规则）';
+  }
+}
+
+$('replyForm').addEventListener('submit', async (e) => {
+  // dialog form method=dialog closes; intercept save
+});
+$('replySave').addEventListener('click', async (e) => {
+  e.preventDefault();
+  const text = $('replyText').value.trim().slice(0, 500);
+  if (!replyId) return;
+  const row = allFeedback.find(r => r.id === replyId);
+  if (preview && !authUser) {
+    if (row) { row.reply = text; row.replyAt = now(); }
+    $('dlgReply').close(); renderFeedback();
+    $('fbMsg').className = 'msg ok'; $('fbMsg').textContent = '演示：回复已保存（未写库）';
+    return;
+  }
+  try {
+    const f = await getFs(), db = await getDb();
+    await f.updateDoc(f.doc(db, 'feedback', replyId), { reply: text, replyAt: now() });
+    if (row) { row.reply = text; row.replyAt = now(); }
+    $('dlgReply').close(); renderFeedback();
+    $('fbMsg').className = 'msg ok'; $('fbMsg').textContent = text ? '回复已保存' : '已清空回复';
+  } catch (err) {
+    $('fbMsg').className = 'msg err';
+    $('fbMsg').textContent = '回复失败：' + (err.code || err.message);
+  }
+});
+
+function enterAdmin(u) {
+  authUser = u; hdr(u); show('app'); setTab('overview');
+  loadOverview(); loadFeedback();
+}
+
+async function boot() {
+  if (!cfgOk()) {
+    $('gateMsg').className = 'msg err';
+    $('gateMsg').textContent = 'Firebase 未配置';
+    if (preview) { show('app'); setTab('overview'); loadOverview(); loadFeedback(); hdr(null); $('hdrRight').textContent = '演示预览'; }
+    return;
+  }
+  const m = await authMods();
+  const a = await getAuthInstance();
+  m.onAuthStateChanged(a, u => {
+    if (!u) { authUser = null; hdr(null); show('gate'); return; }
+    if (!isAdminUser(u)) {
+      authUser = u; hdr(u); show('denied');
+      $('deniedWho').textContent = '当前：' + (u.email || u.uid);
+      return;
+    }
+    enterAdmin(u);
+  });
+  if (preview && !(a.currentUser)) {
+    // still show preview panels via button? auto if ?uiPreview=1
+    // wait a tick for auth; if still null, show preview app
+    setTimeout(() => {
+      if (!authUser && $('gate') && !$('gate').classList.contains('hidden')) {
+        show('app'); setTab('overview'); loadOverview(); loadFeedback();
+        $('hdrRight').innerHTML = '<span class="tip">本机 UI 预览（未登录）</span>';
+      }
+    }, 600);
+  }
+}
+boot();
+</script>
+</body>
+</html>

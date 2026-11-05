@@ -229,7 +229,7 @@ body.ending #boardWrap{align-items:flex-start}
 .eBtn.go{background:#3F7A4E;border-color:#2E5E3B;color:#fff}
 .lnk{background:none;border:0;color:#5B3A24;font:inherit;font-size:.8em;text-decoration:underline;cursor:pointer;padding:6px}
 #authMsg{min-height:1.2em;color:#B02A00;font-weight:700;font-size:.85em;text-align:center}#authMsg.ok{color:#2B7A3D}
-#forgotRow{width:100%;text-align:left}
+.gBtn{display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;border:2px solid #3B2A1E;min-height:64px;font-size:1.05em}.gLogo{width:28px;height:28px;flex:none}.gNote{margin:-4px 0 4px;font-size:.78em;color:#6B5444;text-align:center}
 .homeTop{width:100%;max-width:720px;display:flex;align-items:center;justify-content:space-between}
 .homeTop h1{flex:1;margin:4px 0;font-size:1.35em}
 #setBtn{font-size:1.4em;min-width:56px}
@@ -250,12 +250,9 @@ body.ending #boardWrap{align-items:flex-start}
     <img src="icon.svg" alt="" style="width:96px;height:96px">
     <p class="brandName">Family Photo Puzzle</p>
     <p class="tagline">🌿 <span data-t="tagline"></span> 🌿</p>
-    <div class="fld"><span class="fi">✉️</span><input id="authEmail" type="email" autocomplete="email"></div>
-    <div class="fld"><span class="fi">🔒</span><input id="authPw" type="password" autocomplete="current-password" minlength="6"><button type="button" id="authEye" class="eye" aria-pressed="false">👁️</button></div>
-    <div id="forgotRow"><button class="lnk" id="authForgot" data-t="forgot"></button></div>
     <div id="authMsg" role="status"></div>
-    <button class="eBtn go" id="authIn" data-t="login"></button>
-    <button class="eBtn" id="authUp" data-t="register"></button>
+    <button class="eBtn gBtn" id="authGoogle"><svg class="gLogo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.9 6.2C12.4 13.7 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.2C.9 16.6 0 20.2 0 24s.9 7.4 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.5 2.3-6.3 0-11.6-4.2-13.5-10l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg><span data-t="google"></span></button>
+    <p class="gNote" data-t="gNote"></p>
     <button class="eBtn" id="entryGuest" data-t="guest"></button>
   </div>
 </section>
@@ -374,14 +371,14 @@ const TXT={zh:{lvNames:['最易','简单','普通','较难','最难'],fPortrait:
  v:{hello:'Bonjour ! Faisons un puzzle photo ensemble.',pick:'Choisissez une photo.',adjust:'Glissez la photo pour choisir la partie à garder.',small:'Cette photo est un peu petite. Vous pouvez continuer ou en choisir une autre.',blurry:'Cette photo semble floue. Vous pouvez continuer ou en choisir une autre.',bad:'Impossible d’ouvrir cette photo. Essayez-en une autre.',how:'Combien de pièces ?',start:'Glissez une pièce à sa place. Elle échange avec la pièce qui s’y trouve.',resume:'Continuons.',good:['Super !','Bien joué !','Bravo !','Encore une fleur !'],hint:'Regardez l’image complète.',done:'Bravo ! C’est fini ! Voici des fleurs pour vous !',saved:'Enregistré.',help:'Essayez d’abord un exemple.',idle:'Besoin d’aide ? Touchez l’ampoule.'}}};
 
 
-Object.assign(TXT.zh,{shareExpired:'分享已过期',tagline:'珍藏回忆，拼出爱',email:'电子邮箱',pw:'密码（至少6位）',forgot:'忘记密码？',login:'登录',register:'注册新账号',guest:'游客玩',settings:'设置',setLang:'🌐 语言',setSound:'🎵 音乐 / 🔊 语音',setAcct:'👤 账号',clearData:'🗑️ 清除本机数据',clearQ:'要清除这台设备上的全部拼图和成绩吗？',clearTip:'照片和进度会删掉，不能恢复。',clearYes:'清除',exit:'🚪 退出游戏',saveImg:'🎁 送朋友玩这张（7天）',shareOne:'🎁 送朋友'});
-Object.assign(TXT.en,{saveImg:'🎁 Share this puzzle (7 days)',shareOne:'🎁 Share',shareExpired:'This shared puzzle has expired',tagline:'Treasure memories, piece together love',email:'Email',pw:'Password (6+ characters)',forgot:'Forgot password?',login:'Log in',register:'Create account',guest:'Play as guest',settings:'Settings',setLang:'🌐 Language',setSound:'🎵 Music / 🔊 Voice',setAcct:'👤 Account',clearData:'🗑️ Clear data on this device',clearQ:'Delete all puzzles and scores on this device?',clearTip:'Photos and progress will be deleted for good.',clearYes:'Clear',exit:'🚪 Exit game'});
-Object.assign(TXT.fr,{saveImg:'🎁 Offrir ce puzzle (7 jours)',shareOne:'🎁 Offrir',shareExpired:'Ce puzzle partagé a expiré',tagline:'Chérir les souvenirs, assembler l’amour',email:'E-mail',pw:'Mot de passe (6 caractères min.)',forgot:'Mot de passe oublié ?',login:'Se connecter',register:'Créer un compte',guest:'Jouer en invité',settings:'Réglages',setLang:'🌐 Langue',setSound:'🎵 Musique / 🔊 Voix',setAcct:'👤 Compte',clearData:'🗑️ Effacer les données',clearQ:'Effacer tous les puzzles et scores de cet appareil ?',clearTip:'Les photos et la progression seront supprimées.',clearYes:'Effacer'});
+Object.assign(TXT.zh,{shareExpired:'分享已过期',tagline:'珍藏回忆，拼出爱',google:'用 Google 继续',gNote:'不用另设密码，用你的 Google 账号登录',guest:'游客玩',settings:'设置',setLang:'🌐 语言',setSound:'🎵 音乐 / 🔊 语音',setAcct:'👤 账号',clearData:'🗑️ 清除本机数据',clearQ:'要清除这台设备上的全部拼图和成绩吗？',clearTip:'照片和进度会删掉，不能恢复。',clearYes:'清除',exit:'🚪 退出游戏',saveImg:'🎁 送朋友玩这张（7天）',shareOne:'🎁 送朋友'});
+Object.assign(TXT.en,{saveImg:'🎁 Share this puzzle (7 days)',shareOne:'🎁 Share',shareExpired:'This shared puzzle has expired',tagline:'Treasure memories, piece together love',google:'Continue with Google',gNote:'No new password — sign in with your Google account',guest:'Play as guest',settings:'Settings',setLang:'🌐 Language',setSound:'🎵 Music / 🔊 Voice',setAcct:'👤 Account',clearData:'🗑️ Clear data on this device',clearQ:'Delete all puzzles and scores on this device?',clearTip:'Photos and progress will be deleted for good.',clearYes:'Clear',exit:'🚪 Exit game'});
+Object.assign(TXT.fr,{saveImg:'🎁 Offrir ce puzzle (7 jours)',shareOne:'🎁 Offrir',shareExpired:'Ce puzzle partagé a expiré',tagline:'Chérir les souvenirs, assembler l’amour',google:'Continuer avec Google',gNote:'Pas de nouveau mot de passe — connectez-vous avec Google',guest:'Jouer en invité',settings:'Réglages',setLang:'🌐 Langue',setSound:'🎵 Musique / 🔊 Voix',setAcct:'👤 Compte',clearData:'🗑️ Effacer les données',clearQ:'Effacer tous les puzzles et scores de cet appareil ?',clearTip:'Les photos et la progression seront supprimées.',clearYes:'Effacer'});
 let LANG=localStorage.getItem('pz_lang');if(!TXT[LANG])LANG='zh'; // V1.12 默认简体中文
 const t=k=>TXT[LANG][k],V=k=>TXT[LANG].v[k];
 function applyLang(){document.documentElement.lang={zh:'zh-CN',en:'en',fr:'fr'}[LANG];document.title=t('title').replace('🧩 ','');
  document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));document.querySelectorAll('[data-th]').forEach(e=>e.innerHTML=t(e.dataset.th));
- document.querySelectorAll('.langChips button').forEach(b=>b.classList.toggle('sel',b.dataset.lang===LANG));$('authEmail').placeholder=t('email');$('authPw').placeholder=t('pw');try{window.dispatchEvent(new Event('pz-lang'))}catch(e){}if(S.labs[0]&&!S.labs[0].edited)S.labs[0].txt=t('labelDefault')(new Date());if(typeof renderLabs==='function')renderLabs();
+ document.querySelectorAll('.langChips button').forEach(b=>b.classList.toggle('sel',b.dataset.lang===LANG));try{window.dispatchEvent(new Event('pz-lang'))}catch(e){}if(S.labs[0]&&!S.labs[0].edited)S.labs[0].txt=t('labelDefault')(new Date());if(typeof renderLabs==='function')renderLabs();
  if($('s-play').classList.contains('on')){upd();buildQ()}if($('s-pieces').classList.contains('on'))buildChoices();buildHomeDiff();setToggles();renderList();if($('tut').classList.contains('on'))tutShow(tutI)}
 // ================= 语音 + 提示音 =================
 if(localStorage.getItem('pz_voice_reset')!=='v1.2'){localStorage.setItem('pz_voice','off');localStorage.setItem('pz_voice_reset','v1.2')} // V1.2：语音默认关闭（旧设置重置一次）
@@ -421,7 +418,21 @@ onTap($('voiceBtn'),()=>{voiceOn=!voiceOn;localStorage.setItem('pz_voice',voiceO
 onTap($('newBtn'),()=>go('s-source',V('pick')));
 onTap($('helpBtn'),()=>{$('helpBox').classList.add('on');say(V('help'))});onTap($('helpClose'),()=>$('helpBox').classList.remove('on'));
 // ================= IndexedDB：多个拼图 =================
-let DB;const dbReady=new Promise(ok=>{const r=indexedDB.open('photo-puzzle',1);r.onupgradeneeded=()=>r.result.createObjectStore('puzzles',{keyPath:'id'});r.onsuccess=()=>{DB=r.result;ok()};r.onerror=()=>ok()});
+// V1.16：本机拼图库按身份分开——游客 photo-puzzle-guest；登录用户 photo-puzzle-u-<uid>。身份确定后才打开。
+let DB=null,OWNER=null,idOk;let dbReady=new Promise(ok=>idOk=ok);
+const ownerKey=k=>'pz_'+(OWNER&&OWNER!=='guest'?'u_'+OWNER:'guest')+'_'+k;window.pzOwnerKey=ownerKey;
+function idbOpen(name,create){return new Promise(ok=>{let made=false;const r=indexedDB.open(name);r.onupgradeneeded=()=>{made=true;if(create)r.result.createObjectStore('puzzles',{keyPath:'id'});else r.transaction.abort()};
+ r.onsuccess=()=>{const d=r.result;if(!d.objectStoreNames.contains('puzzles')){d.close();if(!create)indexedDB.deleteDatabase(name);return ok(null)}ok(d)};r.onerror=()=>{if(!create&&made)indexedDB.deleteDatabase(name);ok(null)}})}
+async function migrateLegacy(d){ // 旧的不分人 photo-puzzle 库 → 当前身份的库，然后删掉旧库
+ try{const old=await idbOpen('photo-puzzle',false);if(old){const all=await new Promise(ok=>{const r=old.transaction('puzzles','readonly').objectStore('puzzles').getAll();r.onsuccess=()=>ok(r.result||[]);r.onerror=()=>ok([])});
+  if(d)await new Promise(ok=>{const t=d.transaction('puzzles','readwrite');const st=t.objectStore('puzzles');all.forEach(o=>st.put(o));t.oncomplete=t.onerror=t.onabort=()=>ok()});old.close();if(d)indexedDB.deleteDatabase('photo-puzzle')}}catch(e){console.warn('legacy idb',e)}
+ for(const k of Object.keys(localStorage))if(/^pz_(best_g\d+|nick)$/.test(k)){const nk=ownerKey(k.slice(3));if(localStorage.getItem(nk)==null)localStorage.setItem(nk,localStorage.getItem(k));localStorage.removeItem(k)}}
+window.pzSetOwner=async(o,legacy=true)=>{o=o||'guest';if(o===OWNER&&DB)return;OWNER=o;if(DB){try{DB.close()}catch(e){}DB=null}
+ let done;const p=new Promise(ok=>done=ok);const first=dbReady;dbReady=p;
+ const d=await idbOpen(o==='guest'?'photo-puzzle-guest':'photo-puzzle-u-'+o,true);if(legacy)await migrateLegacy(d);
+ if(OWNER!==o){if(d)d.close();done();return}DB=d;migrated=null;try{CUR=null}catch(e){}done();idOk&&(idOk(),idOk=null);
+ try{renderList()}catch(e){}window.dispatchEvent(new Event('pz-owner'))};
+setTimeout(()=>{if(!OWNER)window.pzSetOwner('guest',false)},8000); // 云端模块加不上（离线）时，8秒后按游客打开（不迁移旧库，免得把账号的拼图归给游客）
 function tx(mode){return DB.transaction('puzzles',mode).objectStore('puzzles')}
 async function dbPut(o){await dbReady;if(!DB)return;return new Promise(ok=>{const r=tx('readwrite').put(o);r.onsuccess=r.onerror=()=>ok()})}
 async function dbAll(){await dbReady;if(!DB)return[];return new Promise(ok=>{const r=tx('readonly').getAll();r.onsuccess=()=>ok(r.result||[]);r.onerror=()=>ok([])})}
@@ -607,7 +618,7 @@ onTap($('hintBtn'),()=>{if(lock)return;const p=$('peek');if(!p)return;clearSel()
  th.addEventListener('pointerdown',on);th.addEventListener('pointerup',off);th.addEventListener('pointercancel',off);th.addEventListener('lostpointercapture',off);th.addEventListener('contextmenu',e=>e.preventDefault())})();
 onTap($('playBack'),()=>{tStop();persist();go(backTo)});
 function celebrate(){document.body.classList.add('ending');requestAnimationFrame(layout);tStop();persist();els.forEach(e=>e.classList.remove('ok'));
- const ms=CUR.playMs||0,n=S.n;CUR.done=CUR.done||{};CUR.bestMs=CUR.bestMs||{};CUR.done[n]=true;if(!CUR.bestMs[n]||ms<CUR.bestMs[n])CUR.bestMs[n]=Math.round(ms);persist();const key='pz_best_g'+n,prev=+localStorage.getItem(key)||0,isBest=!prev||ms<prev;if(isBest){localStorage.setItem(key,Math.round(ms));try{window.pzCloud&&pzCloud.onBest(n,ms)}catch(e){}}
+ const ms=CUR.playMs||0,n=S.n;CUR.done=CUR.done||{};CUR.bestMs=CUR.bestMs||{};CUR.done[n]=true;if(!CUR.bestMs[n]||ms<CUR.bestMs[n])CUR.bestMs[n]=Math.round(ms);persist();const key=ownerKey('best_g'+n),prev=+localStorage.getItem(key)||0,isBest=!prev||ms<prev;if(isBest){localStorage.setItem(key,Math.round(ms));try{window.pzCloud&&pzCloud.onBest(n,ms)}catch(e){}}
  $('timeLine').textContent=t('timeUsed')(...fmt(ms));$('bestLine').textContent=isBest&&prev?t('newBest'):t('best')(...fmt(isBest?ms:prev));if(isBest&&prev)chime([659,784,988,1319],.3);
  const nb=$('nextLvl'),nx=LV[LV.indexOf(n)+1];nb.style.display='';nb.textContent=nx?t('next')(levelName(nx)+' '+gridTxt(nx),nx):t('again'); // V1.12：没有下一关就是「再玩一次」，不再留空
  window.__last={ms,best:isBest,prev};try{window.dispatchEvent(new CustomEvent('pz-done',{detail:{n,ms:Math.round(ms),grid:gridTxt(n)}}))}catch(e){}$('celebrate').classList.add('on');$('bouquetWrap').classList.remove('fade');setTimeout(()=>$('bouquetWrap').classList.add('fade'),2600);chime([523,659,784,1047],.4);
@@ -647,8 +658,7 @@ window.enterHome=enterHome;
 onTap($('entryGuest'),()=>{sessionStorage.setItem('pz_entry','guest');enterHome()});
 onTap($('setBtn'),()=>go('s-settings'));
 onTap($('clearBtn'),()=>$('clearBox').classList.add('on'));onTap($('clearNo'),()=>$('clearBox').classList.remove('on'));
-onTap($('clearYes'),async()=>{const all=await dbAll();for(const p of all)await dbDel(p.id);Object.keys(localStorage).filter(k=>/^pz_(best_g|tut|trial)/.test(k)).forEach(k=>localStorage.removeItem(k));CUR=null;$('clearBox').classList.remove('on');renderList();go('s-home')});
-(function(){const e=$('authEye');if(!e)return;onTap(e,()=>{const p=$('authPw'),sh=p.type==='password';p.type=sh?'text':'password';e.textContent=sh?'🙈':'👁️';e.setAttribute('aria-pressed',sh)})})();
+onTap($('clearYes'),async()=>{const all=await dbAll();for(const p of all)await dbDel(p.id);Object.keys(localStorage).filter(k=>/^pz_(tut|trial)/.test(k)||k.startsWith(ownerKey('best_g'))).forEach(k=>localStorage.removeItem(k));CUR=null;$('clearBox').classList.remove('on');renderList();go('s-home')});
 setMusicBtns();applyLang();
 if(sessionStorage.getItem('pz_entered'))enterHome(); // 本次已进过 → 刷新不再回开屏
 if('serviceWorker'in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});

@@ -11,26 +11,24 @@ const zh = () => LG() === 'zh';
 // V1.12：三语 T(中文, English, Français)；没给法语就用英文
 const T = (a, b, c) => ({ zh: a, en: b, fr: c || b })[LG()];
 let user = null, authMods = null;
+const NK = () => window.pzOwnerKey ? window.pzOwnerKey('nick') : 'pz_guest_nick'; // V1.16 昵称按身份分开
+const setOwner = async u => { try { if (window.pzSetOwner) await window.pzSetOwner(u ? u.uid : 'guest'); } catch (e) { console.warn('owner', e); } };
 const AM = async () => authMods || (authMods = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js'));
 
 // V1.12：登录表单放在 index.html 的开屏 #s-entry；账号栏放在设置页 #acctSlot
 function ui() {
   const bar = document.createElement('div'); bar.id = 'acctBar';
   const slot = $('acctSlot'); slot.innerHTML = ''; slot.appendChild(bar);
-  tap($('authIn'), () => email(false)); tap($('authUp'), () => email(true)); tap($('authForgot'), forgot);
+  tap($('authGoogle'), google);
   render();
   window.addEventListener('pz-lang', () => setTimeout(render, 0));
 }
-function eye(force) { const p = $('authPw'), show = typeof force === 'boolean' ? force : p.type === 'password';
-  p.type = show ? 'text' : 'password'; const b = $('authEye'); b.textContent = show ? '🙈' : '👁️'; b.setAttribute('aria-pressed', show);
-  b.setAttribute('aria-label', show ? T('隐藏密码', 'Hide password') : T('显示密码', 'Show password')); }
 // 第1条：换人登录 / 退出时，清掉表单和登录残留，回到干净游客状态（不动本机照片和成绩）
-function clearAuthForm() { ['authEmail', 'authPw'].forEach(id => { const e = $(id); if (e) e.value = ''; });
-  if ($('authPw')) eye(false); if ($('authMsg')) msg(''); }
+function clearAuthForm() { if ($('authMsg')) msg(''); }
 async function logout() { clearAuthForm(); Object.values(timers).forEach(clearTimeout); timers = {};
   try { const m = await AM(), a = await getAuthInstance(); await m.signOut(a); } catch (e) { console.warn('signout', e); }
   try { for (const k of Object.keys(sessionStorage)) if (/firebase|pz_auth/i.test(k)) sessionStorage.removeItem(k); } catch (e) {}
-  user = null; try { sessionStorage.removeItem('pz_entered'); sessionStorage.removeItem('pz_entry'); } catch (e) {}
+  user = null; await setOwner(null); try { sessionStorage.removeItem('pz_entered'); sessionStorage.removeItem('pz_entry'); } catch (e) {}
   render(); window.go && window.go('s-entry'); }
 function open() { clearAuthForm(); render(); window.go && window.go('s-entry'); }
 function close() { clearAuthForm(); window.enterHome && window.enterHome(); }
@@ -49,21 +47,22 @@ const ERR = { 'auth/invalid-email': ['邮箱格式不对', 'Invalid email', 'E-m
   'auth/wrong-password': ['密码不对', 'Wrong password', 'Mot de passe incorrect'], 'auth/user-not-found': ['这个邮箱还没注册', 'No account for this email', 'Aucun compte pour cet e-mail'],
   'auth/email-already-in-use': ['这个邮箱已经注册过，请直接登录', 'Email already registered — please sign in', 'E-mail déjà inscrit — connectez-vous'],
   'auth/weak-password': ['密码太短，至少6位', 'Password too short (6+)', 'Mot de passe trop court (6 min.)'], 'auth/popup-closed-by-user': ['登录窗口被关掉了', 'Sign-in window closed', 'Fenêtre fermée'],
+  'auth/unauthorized-domain': ['这个网址还没在 Firebase 授权，请联系管理员', 'This site is not authorized for Google sign-in yet', 'Ce site n’est pas encore autorisé'],
+  'auth/operation-not-allowed': ['Google 登录还没开启，请联系管理员', 'Google sign-in is not enabled yet', 'Connexion Google pas encore activée'],
+  'auth/account-exists-with-different-credential': ['这个邮箱已用其他方式注册', 'This email uses another sign-in method', 'Cet e-mail utilise une autre méthode'],
+  'auth/cancelled-popup-request': ['登录窗口被关掉了', 'Sign-in window closed', 'Fenêtre fermée'],
   'auth/network-request-failed': ['网络不通，请稍后再试', 'Network error, try later', 'Erreur réseau, réessayez'], 'auth/too-many-requests': ['试太多次了，请稍后再试', 'Too many tries, try later', 'Trop d’essais, réessayez plus tard'] };
 const errTxt = c => { const e = ERR[c]; return e ? T(e[0], e[1], e[2]) : T('出错了：', 'Error: ', 'Erreur : ') + c; };
-async function email(reg) {
-  const em = $('authEmail').value.trim(), pw = $('authPw').value;
-  if (!em || !pw) return msg(T('请填邮箱和密码', 'Enter email and password', 'Saisissez e-mail et mot de passe'));
-  try { const m = await AM(), a = await getAuthInstance();
-    await (reg ? m.createUserWithEmailAndPassword : m.signInWithEmailAndPassword)(a, em, pw); close();
-  } catch (e) { msg(errTxt(e.code || e.message)); }
+// V1.17：注册/登录只用 Google（不另设密码）。桌面用弹窗；弹窗被拦/不支持时退回整页跳转。
+// 同一 Google 邮箱 = 同一 Firebase 用户（uid 不变）；本机库仍按 uid 分开。
+async function google() {
+  const b = $('authGoogle'); if (b) b.disabled = true; msg(T('正在打开 Google…', 'Opening Google…', 'Ouverture de Google…'), true);
+  try { const m = await AM(), a = await getAuthInstance(); const pr = new m.GoogleAuthProvider(); pr.setCustomParameters({ prompt: 'select_account' });
+    try { await m.signInWithPopup(a, pr); close(); }
+    catch (e) { if (/popup-blocked|operation-not-supported|cancelled-popup/.test(e.code || '')) { await m.signInWithRedirect(a, pr); return; } throw e; }
+  } catch (e) { msg(errTxt(e.code || e.message)); } finally { if (b) b.disabled = false; }
 }
-async function forgot() {
-  const em = $('authEmail').value.trim(); if (!em) return msg(T('先在上面填好邮箱', 'Enter your email above first', 'Saisissez d’abord votre e-mail'));
-  try { const m = await AM(); await m.sendPasswordResetEmail(await getAuthInstance(), em);
-    msg(T('重设密码的邮件已发出，请查收邮箱', 'Reset email sent — check your inbox', 'E-mail de réinitialisation envoyé'), true);
-  } catch (e) { msg(errTxt(e.code || e.message)); }
-}
+async function redirectResult() { try { const m = await AM(); await m.getRedirectResult(await getAuthInstance()); } catch (e) { if (e && e.code) msg(errTxt(e.code)); } }
 
 // ---- 同步：只同步进度和成绩，不上传照片 ----
 const pick = p => ({ n: p.n, pos: p.pos || null, correct: p.correct || 0, playMs: Math.round(p.playMs || 0), swaps: p.swaps || 0,
@@ -83,9 +82,10 @@ async function pullBest() {
   try { const { getDb, getFs } = await import('./firebase-app.js'); const f = await getFs(), db = await getDb();
     const s = await f.getDoc(f.doc(db, 'users', user.uid)); const d = s.exists() ? s.data() : {};
     const up = {};
-    for (const k of Object.keys(d)) if (k.startsWith('best_g')) { const loc = +localStorage.getItem('pz_' + k) || 0;
-      if (!loc || d[k] < loc) localStorage.setItem('pz_' + k, d[k]); }
-    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('pz_best_g')) { const c = k.slice(3), v = +localStorage.getItem(k);
+    for (const k of Object.keys(d)) if (k.startsWith('best_g')) { const OK = window.pzOwnerKey; if (!OK) return; const loc = +localStorage.getItem(OK(k)) || 0;
+      if (!loc || d[k] < loc) localStorage.setItem(OK(k), d[k]); }
+    const pre = window.pzOwnerKey ? window.pzOwnerKey('') : null; if (!pre || !pre.includes('u_' + user.uid + '_')) return; // 只合并当前账号自己的本机成绩
+    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith(pre + 'best_g')) { const c = k.slice(pre.length), v = +localStorage.getItem(k);
       if (!d[c] || v < d[c]) up[c] = v; } }
     await upsertUser(user.uid, { email: user.email || '', displayName: user.displayName || '', locale: LG(), ...up });
     window.dispatchEvent(new Event('pz-cloud-sync'));
@@ -167,7 +167,7 @@ function fbOpen() {
   $('fbBox').classList.add('on');
 }
 // V1.15 反馈墙：昵称只用用户自己填的或账号昵称，绝不用邮箱
-const nick = () => (localStorage.getItem('pz_nick') || (user && user.displayName) || '').slice(0, 20);
+const nick = () => (localStorage.getItem(NK()) || (user && user.displayName) || '').slice(0, 20);
 const cleanNick = v => (v || '').replace(/@.*$/, '').trim().slice(0, 20);
 async function fbSave(rec) {
   if (!isFirebaseConfigured()) return false;
@@ -178,7 +178,7 @@ const mailto = (subj, body) => `mailto:${FB_EMAIL}?subject=${encodeURIComponent(
 async function sendFb() {
   if (!stars) { $('fbMsg').style.color = '#B02A00'; $('fbMsg').textContent = T('请先点星星打分', 'Tap the stars first', 'Touchez d’abord les étoiles'); return; }
   const d = lastDone || {}, text = $('fbText').value.trim().slice(0, 100), dn = cleanNick($('fbNick').value);
-  if (dn) localStorage.setItem('pz_nick', dn);
+  if (dn) localStorage.setItem(NK(), dn);
   const rec = { kind: 'rating', stars, text, displayName: dn, n: d.n || 0, grid: String(d.grid || ''), ms: d.ms || 0, lang: LG(), createdAt: Date.now() };
   window.__lastFb = rec; $('fbSend').disabled = true;
   const saved = await fbSave(rec); window.__lastFb.saved = saved;
@@ -218,7 +218,7 @@ function openWall() { $('askNick').value = nick(); $('askMsg').textContent = '';
 async function sendAsk() {
   const text = $('askText').value.trim().slice(0, 200), dn = cleanNick($('askNick').value), m = $('askMsg');
   if (text.length < 2) { m.style.color = '#B02A00'; m.textContent = T('请先写点内容', 'Please write something', 'Écrivez quelque chose'); return; }
-  if (dn) localStorage.setItem('pz_nick', dn);
+  if (dn) localStorage.setItem(NK(), dn);
   const rec = { kind: 'ask', stars: 0, text, displayName: dn, n: 0, grid: '', ms: 0, lang: LG(), createdAt: Date.now() };
   window.__lastAsk = rec; const ok = await fbSave(rec); rec.saved = ok;
   window.__lastAskMailto = mailto(T('照片拼图留言', 'Photo Puzzle question', 'Question Photo Puzzle'), `${text}\n\n${dn || T('游客', 'Guest', 'Invité')}`);
@@ -232,6 +232,8 @@ async function loadWall() {
   if (!rows) try { const { getDb, getFs } = await import('./firebase-app.js'); const f = await getFs(), db = await getDb();
     const qs = await f.getDocs(f.query(f.collection(db, 'feedback'), f.where('kind', 'in', ['rating', 'ask']), f.limit(200)));
     rows = qs.docs.map(x => x.data()); } catch (e) { console.warn('wall', e); L.innerHTML = `<div class="tip">${T('暂时连不上，请稍后再试', 'Can’t load right now', 'Chargement impossible')}</div>`; return; }
+  // Admin V1：软隐藏（hidden 或 kind=hidden_*）不进公开墙
+  rows = (rows || []).filter(r => r && !r.hidden && !String(r.kind || '').startsWith('hidden_'));
   rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); window.__wallRows = rows.length;
   if (!rows.length) { L.innerHTML = `<div class="tip">${T('还没有留言，来做第一个吧', 'No messages yet', 'Aucun message')}</div>`; return; }
   L.innerHTML = rows.map(r => `<div class="wallItem" style="background:#fff;border:3px solid #1E1E1E;border-radius:16px;padding:10px 12px">
@@ -249,13 +251,15 @@ if (isFirebaseConfigured()) {
   // V1.14：?guest=1 强制游客入口——退出这台设备上的登录、清表单和自动进入标记，直接以游客进首页（本机拼图和成绩保留）
   const q0 = new URLSearchParams(location.search); let forcing = q0.get('guest') === '1';
   if (q0.has('guest')) { q0.delete('guest'); history.replaceState(null, '', location.pathname + (q0.toString() ? '?' + q0 : '')); }
-  ui(); redeemShare();
+  ui(); redeemShare(); redirectResult();
   if (forcing) (async () => { clearAuthForm(); Object.values(timers).forEach(clearTimeout); timers = {};
     try { const m = await AM(), a = await getAuthInstance(); await m.signOut(a); } catch (e) { console.warn('guest signout', e); }
     try { for (const k of Object.keys(sessionStorage)) if (/firebase|pz_auth|pz_entr/i.test(k)) sessionStorage.removeItem(k); } catch (e) {}
-    user = null; forcing = false; window.__guestForced = true; sessionStorage.setItem('pz_entry', 'guest'); render(); window.enterHome && window.enterHome(); })();
-  onAuthChange(u => { if (forcing) u = null; user = u; render(); if (u) { pullBest(); if ($('s-entry').classList.contains('on')) window.enterHome && window.enterHome(); } });
+    user = null; forcing = false; window.__guestForced = true; await setOwner(null); sessionStorage.setItem('pz_entry', 'guest'); render(); window.enterHome && window.enterHome(); })();
+  onAuthChange(async u => { if (forcing) return; user = u; await setOwner(u); render(); if (u) { pullBest(); if ($('s-entry').classList.contains('on')) window.enterHome && window.enterHome(); } });
 }
+
+else setOwner(null);
 
 window.PZsharePuzzle = sharePuzzle;
 window.addEventListener('pz-done', () => { const b = $('saveImg'), c = window.pzCur && window.pzCur(); if (b) b.style.display = c && c.sharedExp ? 'none' : ''; });

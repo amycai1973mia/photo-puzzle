@@ -12,3 +12,5 @@ export const firebaseConfig = {
 };
 export const FIRESTORE_LOCATION = "northamerica-northeast2";
 export const OWNER_EMAIL = "amycai1973@gmail.com";
+// Admin V1 白名单（须与 firestore.rules 里 isAdmin() 邮箱列表同步；新增管理员改两处）
+export const ADMIN_EMAILS = ["amycai1973@gmail.com"];
